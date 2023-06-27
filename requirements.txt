@@ -1,0 +1,15 @@
+torch
+torchvision
+timm
+tqdm
+msgpack
+Pillow
+datadings
+numpy
+torchprofile
+fvcore
+einops
+PyWavelets
+sinkhorn_transformer
+routing_transformer
+halonet_pytorch
