@@ -16,6 +16,8 @@ from resizing_interface import vit_sizes
 
 
 class KmeansAttentionDDP(nn.Module):
+    # This is a sligtly modified version of the code from https://github.com/lucidrains/routing-transformer
+    # The original code is licensed under the MIT license (see licenses/MIT.txt).
     def __init__(self, num_clusters, window_size, num_heads, head_dim, causal=False, dropout=0., ema_decay=0.999,
                  commitment=1e-4, context_window_size=None, receives_context=False, num_mem_kv=0, shared_qk=False):
         super().__init__()

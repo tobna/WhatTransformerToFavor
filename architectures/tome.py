@@ -1,11 +1,12 @@
 # Taken from https://github.com/facebookresearch/ToMe/blob/main/tome/patch/timm.py with slight modifications.
+# The original code is licensed under the CC BY-NC: Attribution-NonCommercial 4.0 license (see licenses/CC-BY-NC_4.0.txt).
+
 import math
 from functools import partial
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# This source code is licensed under the CC BY-NC: Attribution-NonCommercial 4.0 license (see licenses/CC-BY-NC_4.0.txt).
 # --------------------------------------------------------
 # References:
 # timm: https://github.com/rwightman/pytorch-image-models/tree/master/timm

@@ -1,4 +1,5 @@
 # taken from https://github.com/YehLi/ImageNetModel/blob/main/classification/wavevit.py with slight modifications
+# The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt).
 import math
 from functools import partial
 

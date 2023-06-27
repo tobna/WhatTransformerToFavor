@@ -1,4 +1,5 @@
 # Taken from https://github.com/youweiliang/evit with slight modifications
+# The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt).
 """ Vision Transformer (ViT) in PyTorch
 
 A PyTorch implement of Vision Transformers as described in:

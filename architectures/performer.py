@@ -1,4 +1,5 @@
 # based on https://github.com/lucidrains/performer-pytorch with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt).
 
 import math
 import torch

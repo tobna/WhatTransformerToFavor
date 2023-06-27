@@ -1,9 +1,10 @@
 # taken from https://github.com/microsoft/FocalNet/blob/main/classification/focalnet.py with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt).
 
 # --------------------------------------------------------
 # FocalNets -- Focal Modulation Networks
 # Copyright (c) 2022 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
+# Licensed under The MIT.txt License [see LICENSE for details]
 # Written by Jianwei Yang (jianwyan@microsoft.com)
 # --------------------------------------------------------
 

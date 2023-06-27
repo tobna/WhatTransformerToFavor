@@ -16,6 +16,7 @@ class TokenLearnerModuleV11(nn.Module):
     instead of sigmoid. We confirmed that this version works better in general.
 
     Based on https://github.com/google-research/scenic/blob/main/scenic/projects/token_learner/model.py.
+    The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt).
     """
     def __init__(self, num_tokens, dim, bottleneck_dim=None, num_prefix_tokens=0, drop=0., norm_layer=nn.LayerNorm):
         """

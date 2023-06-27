@@ -1,4 +1,21 @@
 # taken from https://github.com/NVlabs/A-ViT/blob/master/timm/models/act_vision_transformer.py with slight modifications
+# The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt)
+
+# --------------------------------------------------------
+# Copyright (C) 2022 NVIDIA Corporation. All rights reserved.
+# Nvidia Source Code License-NC
+# Official PyTorch implementation of CVPR2022 paper
+# A-ViT: Adaptive Tokens for Efficient Vision Transformer
+# Hongxu Yin, Arash Vahdat, Jose M. Alvarez, Arun Mallya, Jan Kautz,
+# and Pavlo Molchanov
+# --------------------------------------------------------
+
+# The following snippets are started from:
+# https://github.com/facebookresearch/deit
+# &
+# https://github.com/rwightman/pytorch-image-models
+# Before code is extensively modified to accomodate A-ViT training
+
 import math
 from collections import OrderedDict
 from functools import partial

@@ -1,6 +1,7 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 # Taken from https://github.com/facebookresearch/deit with slight modifications
+# The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt)
 
 import logging
 from copy import copy

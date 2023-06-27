@@ -1,4 +1,5 @@
 # Taken from https://github.com/facebookresearch/xcit with slight modifications
+# The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt).
 
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.

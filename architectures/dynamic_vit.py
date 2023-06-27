@@ -1,4 +1,6 @@
 # Taken from https://github.com/raoyongming/DynamicViT/blob/master/models/dyvit.py with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt)
+
 
 """ Vision Transformer (ViT) in PyTorch
 

@@ -1,9 +1,11 @@
 # taken from https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer_v2.py
 # with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt).
+
 # --------------------------------------------------------
 # Swin Transformer V2
 # Copyright (c) 2022 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
+# licensed under the MIT license (see licenses/MIT.txt).
 # Written by Ze Liu
 # --------------------------------------------------------
 from copy import copy

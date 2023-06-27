@@ -1,3 +1,6 @@
+# based on https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/coat.py with slight modifications
+# timm is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt)
+
 """
 CoaT architecture.
 

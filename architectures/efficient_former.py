@@ -1,7 +1,8 @@
 """
 EfficientFormer_v2
 taken from https://github.com/snap-research/EfficientFormer/blob/main/models/efficientformer_v2.py
-with slight modifications
+with slight modifications.
+The original code is licensed under the Apache License, Version 2.0 (see licenses/APACHE_2.0.txt).
 """
 import logging
 import os

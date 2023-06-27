@@ -1,4 +1,5 @@
 # Taken from https://github.com/raoyongming/GFNet with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt).
 
 import logging
 import math

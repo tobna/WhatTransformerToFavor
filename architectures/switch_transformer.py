@@ -15,6 +15,7 @@ class SwitchMlp(nn.Module):
     ## Routing among multiple FFNs
     taken from https://github.com/labmlai/annotated_deep_learning_paper_implementations/blob/master/labml_nn/transformers/switch/__init__.py
     with some modifications
+    The original code is licensed under the MIT license (see licenses/MIT.txt).
     """
 
     def __init__(self, n_experts, dim, capacity_factor=1.1, drop_tokens=False, is_scale_prob=False, expert_fn=Mlp):

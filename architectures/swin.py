@@ -1,9 +1,10 @@
 # Taken from https://github.com/microsoft/Swin-Transformer with slight modifications
+# The original code is licensed under the MIT license (see licenses/MIT.txt).
 
 # --------------------------------------------------------
 # Swin Transformer
 # Copyright (c) 2021 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
+# licensed under the MIT license (see licenses/MIT.txt).
 # Written by Ze Liu
 # --------------------------------------------------------
 from copy import copy
