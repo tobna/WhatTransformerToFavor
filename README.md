@@ -80,6 +80,7 @@ The most important ones are
 | `-run_name <name for the run>`     | Name or description of this training run.              |
 | `-dataset <dataset>`               | Specifies a dataset to use.                            |
 | `-task <task>`                     | Specifies a task. The default is `pre-train`.          |
+| `-local`                           | Run on the local machine, not on a slurm cluster.      |
 | `-dataset_root <dataset root>`     | Root folder of the datasets.                           |
 | `-results_folder <results folder>` | Folder to save results into.                           |
 | `-logging_folder <logging folder>` | Folder for saving logfiles.                            |
