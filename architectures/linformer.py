@@ -26,7 +26,7 @@ def init_(tensor):
 
 class LinformerSelfAttention(nn.Module):
     # Taken from https://github.com/lucidrains/linformer with some modifications
-    # The original code is licensed under the MIT license (see licenses/MIT.txt).
+    # The original code is licensed under the MIT license (see licenses/MIT.txt) from Phil Wang, 2020.
     def __init__(self, dim, seq_len, k=256, heads=8, dim_head=None, one_kv_head=False, share_kv=False, dropout=0.):
         super().__init__()
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'

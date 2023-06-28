@@ -1,5 +1,5 @@
 # taken from https://github.com/changsn/STViT-R/blob/main/models/swin_transformer.py with slight modifications
-# The original code is licensed under the MIT license (see licenses/MIT.txt).
+# The original code is licensed under the MIT license (see licenses/MIT.txt) from changsn, 2023.
 import math
 from functools import partial
 

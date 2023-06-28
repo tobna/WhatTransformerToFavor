@@ -1,5 +1,5 @@
 # based on https://github.com/10-zin/Synthesizer/blob/master/synth/synthesizer/modules.py
-# The original code is licensed under the MIT license (see licenses/MIT.txt).
+# The original code is licensed under the MIT license (see licenses/MIT.txt) from Tenzin Singhay Bhotia, 2020.
 
 import math
 from functools import partial

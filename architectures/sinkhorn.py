@@ -16,7 +16,7 @@ from utils import prime_factors
 
 def amp_diff_topk(x, k, temperature=1.):
     # This is a slightly modified version of code from https://github.com/lucidrains/sinkhorn-transformer
-    # The original code is licensed under the MIT license (see licenses/MIT.txt).
+    # The original code is licensed under the MIT license (see licenses/MIT.txt) from Phil Wang, 2020.
     *_, n, dim = x.shape
     topk_tensors = []
 

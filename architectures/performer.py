@@ -1,5 +1,5 @@
 # based on https://github.com/lucidrains/performer-pytorch with slight modifications
-# The original code is licensed under the MIT license (see licenses/MIT.txt).
+# The original code is licensed under the MIT license (see licenses/MIT.txt) from Phil Wang, 2020.
 
 import math
 import torch

@@ -1,5 +1,5 @@
 # Taken from https://github.com/microsoft/Swin-Transformer with slight modifications
-# The original code is licensed under the MIT license (see licenses/MIT.txt).
+# The original code is licensed under the MIT license (see licenses/MIT.txt) from Microsoft Corporation.
 
 # --------------------------------------------------------
 # Swin Transformer

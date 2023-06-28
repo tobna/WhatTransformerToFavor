@@ -1,5 +1,5 @@
 # taken from https://github.com/microsoft/CvT/blob/main/lib/models/cls_cvt.py with slight modifications
-# The original code is licensed under the MIT license (see licenses/MIT.txt).
+# The original code is licensed under the MIT license (see licenses/MIT.txt) from Microsoft Corporation.
 
 
 from collections import OrderedDict

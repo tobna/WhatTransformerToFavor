@@ -7,7 +7,7 @@ from torch import nn, einsum
 import torch.nn.functional as F
 
 from resizing_interface import ResizingInterface
-# The halonet_pytorch package is licensed under the MIT license (see licenses/MIT.txt)
+# The halonet_pytorch package is licensed under the MIT license (see licenses/MIT.txt) from Phil Wang, 2021.
 
 
 # look into https://github.com/leondgarse/keras_cv_attention_models/blob/main/keras_cv_attention_models/halonet/halonet.py
