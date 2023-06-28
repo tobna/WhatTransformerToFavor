@@ -1,8 +1,19 @@
-# What Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers
+# What Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
 ![First plot from the paper: Pareto front of throughput vs. accuracy](./figures/throughput_vs_acc_size_imsize.png)
 
-This is the code for the paper [What Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers](LINK).
+This is the code for the paper [What Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers](LINK), a benchmark of over 30 different efficient vision trainsformers.
+We train models from scratch and track multiple efficiency metrics. 
 
+### Abstract
+The growing popularity of Vision Transformers as the go-to models for image classification has led to an explosion of architectural modifications claiming to be more efficient than the original ViT.
+However, a wide diversity of experimental conditions prevents a fair comparison between all of them, based solely on their reported results.
+That is why we conduct an independent and comprehensive analysis of more than 30 models to evaluate the efficiency of vision transformers and related architectures, considering various performance metrics and conducting our own measurements.
+This way we provide fair, unbiased baselines and metrics, all in one place, therefore enabling practitioners to make more informed decisions.
+Our findings highlight, that ViT is still Pareto optimal across multiple efficiency metrics, as well as the efficiency of sequence reducing approaches. 
+We find that hybrid attention-CNN models fare especially well, when it comes to low inference memory and number of parameters and also show that it is better to scale the model size, than the image size.
+Furthermore, we uncover a strong positive correlation between FLOPS and training memory, which allows for an estimate of VRAM requirements from theoretical measurements only.
+		
+Thanks to our holistic evaluation, this study offers valuable insights for practitioners and researchers, facilitating informed decisions when selecting models for specific applications.
 
 ## Requirements
 This project heavily builds on [timm](https://github.com/huggingface/pytorch-image-models) and open source implementations of the models that are tested.
