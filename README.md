@@ -23,7 +23,7 @@ Supported datasets are CIFAR10, ImageNet-21k, and ImageNet-1k.
 The CIFAR10 dataset has to be located in a subfolder of the dataset root directory called `CIFAR`.
 This is the normal `CIFAR10` from `torchvision.datasets`.
 
-The ImageNet datasets are read using [`datadings`](https://datadings.readthedocs.io/en/stable/). 
+To speed up the data loading, the ImageNet datasets are read using [`datadings`](https://datadings.readthedocs.io/en/stable/). 
 The `.msgpack` files for **ImageNet-1k** should be located in `<dataset_root_folder>/imagenet/msgpack`, 
 while the ones for **ImageNet-21k** should be in `<dataset_root_folder>/imagenet-21k`.
 See the [datadings documentation](https://datadings.readthedocs.io/en/stable/) for information on how to create those files.
@@ -63,20 +63,20 @@ This utilizes the CIFAR10 dataset by default.
 There can be multiple further arguments and flags given to the scripts.
 The most important ones are
 
-|                Arg                 |                      Description                       |
-|:----------------------------------:|:------------------------------------------------------:|
-|          `-model <model>`          |               Model name or checkpoint.                |
-|   `-run_name <name for the run>`   |       Name or description of this training run.        |
-|        `-dataset <dataset>`        |              Specifies a dataset to use.               |
-|           `-task <task>`           |     Specifies a task. The default is `pre-train`.      |
-|   `-dataset_root <dataset root>`   |              Root folder of the datasets.              |
-| `-results_folder <results folder>` |              Folder to save results into.              |
-| `-logging_folder <logging folder>` |              Folder for saving logfiles.               |
-|         `-epochs <epochs>`         |                    Epochs to train.                    |
-|             `-lr <lr>`             |            Learning rate. Default is 3e-3.             |
-|         `-batch_size <bs>`         |              Batch size. Default is 2048.              |
-|        `-weight_decay <wd>`        |             Weight decay. Default is 0.02.             |
-|    `-imsize <image resolution>`    | Resulution of the image to train with. Default is 224. |
+| Arg                                | Description                                            |
+|:-----------------------------------|:-------------------------------------------------------|
+| `-model <model>`                   | Model name or checkpoint.                              |
+| `-run_name <name for the run>`     | Name or description of this training run.              |
+| `-dataset <dataset>`               | Specifies a dataset to use.                            |
+| `-task <task>`                     | Specifies a task. The default is `pre-train`.          |
+| `-dataset_root <dataset root>`     | Root folder of the datasets.                           |
+| `-results_folder <results folder>` | Folder to save results into.                           |
+| `-logging_folder <logging folder>` | Folder for saving logfiles.                            |
+| `-epochs <epochs>`                 | Epochs to train.                                       |
+| `-lr <lr>`                         | Learning rate. Default is 3e-3.                        |
+| `-batch_size <bs>`                 | Batch size. Default is 2048.                           |
+| `-weight_decay <wd>`               | Weight decay. Default is 0.02.                         |
+| `-imsize <image resolution>`       | Resulution of the image to train with. Default is 224. |
 
 For a list of all arguments, run
 ```commandline
@@ -122,6 +122,7 @@ These are the models we support with links to the codebases we utilized:
 
 
 ## License
+We release this code under the [MIT license](./LICENSE).
 
 ## Citation
 If you use this codebase in your project, please cite
