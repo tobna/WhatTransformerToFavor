@@ -1,9 +1,8 @@
 # What Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
 ![First plot from the paper: Pareto front of throughput vs. accuracy](./figures/throughput_vs_acc_size_imsize.png)
 
-This is the code for the paper [What Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers] (Link coming soon), a benchmark of over 30 different efficient vision trainsformers.
+This is the code for the paper [Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers] (Link coming soon), a benchmark of over 30 different efficient vision trainsformers.
 We train models from scratch and track multiple efficiency metrics.
-You can interact with our results on [this](https://transformer-benchmark.github.io/) website.
 
 ### Abstract
 The growing popularity of Vision Transformers as the go-to models for image classification has led to an explosion of architectural modifications claiming to be more efficient than the original ViT.

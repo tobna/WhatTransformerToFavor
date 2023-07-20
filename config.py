@@ -23,11 +23,11 @@ default_kwargs = {'seed': None, 'batch_size': 2048, 'aug_flip': True, 'sched': '
                   'momentum': 0., 'augment_strategy': '3-augment', 'compile_model': True}
                     #, 'model_ema': True, 'model_ema_decay': 0.99996}
 
-slurm_defaults = {'partition': "A100-SDS,A100-80GB", 'container-image': "/netscratch/nauen/images/custom_ViT_v10.sqsh",
-                  'container-mounts': '/netscratch/$USER:/netscratch/$USER,/ds:/ds:ro,"`pwd`":"`pwd`"',
+slurm_defaults = {'partition': "A100-SDS,A100-80GB", 'container-image': "custom_ViT_v09.sqsh",
+                  'container-mounts': 'logging/path:logging/path,/ds:/ds:ro,"`pwd`":"`pwd`"',
                   "job-name": None, "nodes": 1, "ntasks": 4, "cpus-per-task": 24, "gpus-per-task": 1,
                   "mem-per-gpu": 115, "task-prolog": None, "container-workdir": '"`pwd`"', "time": "5-0"}
 
 dataset_root = "/ds/images/"
-results_folder = "/netscratch/nauen/EfficientCVBench"
+results_folder = "results/folder"
 logging_folder = results_folder + "/logging"
