@@ -16,7 +16,7 @@ default_kwargs = {'seed': None, 'batch_size': 2048, 'aug_flip': True, 'sched': '
                   'num_workers': 44, 'experiment_name': "EfficientCVBench", 'aug_solarize': True, 'aug_gauss_blur': True,
                   'aug_color_jitter_factor': 0.3, 'weight_decay': 0.02, 'lr': 3e-3, 'max_grad_norm': 1.,
                   'warmup_epochs': 5, 'label_smoothing': 0.1, 'aug_cutmix': True, 'amp': True, 'save_epochs': 10,
-                  'pin_memory': False, 'gather_stats_during_training': True, 'prefetch_factor': 2, 'eval_amp': True,
+                  'pin_memory': False, 'gather_stats_during_training': True, 'prefetch_factor': 2, 'eval_amp': False,
                   'drop_path_rate': 0.05, 'run_name': None, 'aug_normalize': True, 'opt': 'fusedlamb',
                   'layer_scale': True, 'layer_scale_init_values': 1e-4, 'qkv_bias': True, 'pre_norm': False,
                   'warmup_sched': 'linear', 'opt_eps': 1e-7, 'tqdm': True, 'shuffle': True, 'dropout': 0.,

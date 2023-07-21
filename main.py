@@ -68,7 +68,7 @@ def base_parser():
     # Speedup
     group = parser.add_argument_group("Speedup")
     group.add_argument("-no_amp", action='store_true', help="Dont use automatic mixed precision.")
-    group.add_argument("-no_eval_amp", action='store_true', help="Dont use automatic mixed precision during evaluation")
+    group.add_argument("-eval_amp", action='store_true', help="Use automatic mixed precision during evaluation")
 
     # Data loading
     group = parser.add_argument_group("Data loading")
