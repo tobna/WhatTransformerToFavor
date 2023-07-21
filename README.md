@@ -1,4 +1,4 @@
-# What Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
+# Which Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
 ![First plot from the paper: Pareto front of throughput vs. accuracy](./figures/throughput_vs_acc_size_imsize.png)
 
 This is the code for the paper [Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers] (Link coming soon), a benchmark of over 30 different efficient vision trainsformers.
