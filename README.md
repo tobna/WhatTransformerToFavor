@@ -1,7 +1,7 @@
 # Which Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
 ![First plot from the paper: Pareto front of throughput vs. accuracy](./figures/throughput_vs_acc_size_imsize.png)
 
-This is the code for the paper [Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers] (Link coming soon), a benchmark of over 30 different efficient vision trainsformers.
+This is the code for the paper [Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers](https://arxiv.org/abs/2308.09372), a benchmark of over 30 different efficient vision trainsformers.
 We train models from scratch and track multiple efficiency metrics. You can use [this website](https://transformer-benchmark.github.io) to interactively explore the data.
 
 ### Abstract
@@ -138,6 +138,13 @@ We release this code under the [MIT license](./LICENSE).
 
 ## Citation
 If you use this codebase in your project, please cite
-```
-Citation...
+```BibTeX
+@misc{Nauen2023WTFBenchmark,
+      title={Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers}, 
+      author={Tobias Christian Nauen and Sebastian Palacio and Andreas Dengel},
+      year={2023},
+      eprint={2308.09372},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
 ```
