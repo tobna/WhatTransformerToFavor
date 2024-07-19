@@ -1,22 +1,22 @@
 """
 Module to evaluate trained models.
 """
+
 import logging
-from datetime import datetime
 from timm.loss import LabelSmoothingCrossEntropy
 from data import prepare_dataset
 from metrics import calculate_metrics
 from models import load_pretrained
 from train import _evaluate, setup_tracking_and_logging
-from utils import *
+import torch
+from utils import prep_kwargs, ddp_setup, ddp_cleanup, set_filter_warnings
 
 try:
     from apex.parallel import DistributedDataParallel as DDP
-    from apex import amp
-    from apex.optimizers import FusedLAMB
+
     apex_available = True
 except ImportError as e:
-    print(f"Nvidia apex not available")
+    print("Nvidia apex not available")
     apex_available = False
 
 
@@ -48,9 +48,11 @@ def evaluate_metrics(model, dataset, **kwargs):
     setup_tracking_and_logging(args, rank, append_model_path=model_path)
 
     if rank == 0:
-        logging.info(f"Evaluate metrics for model {model_name} on {dataset}. "
-                     f"It was {old_args.task.replace('-','')}d on {old_args.dataset} for {save_state['epoch']} "
-                     f"epochs.")
+        logging.info(
+            f"Evaluate metrics for model {model_name} on {dataset}. "
+            f"It was {old_args.task.replace('-','')}d on {old_args.dataset} for {save_state['epoch']} "
+            f"epochs."
+        )
         # logging.info(f"full set of arguments: {args}")
         logging.info(f"full set of arguments: {old_args}")
 
@@ -84,7 +86,7 @@ def evaluate(model, dataset, **kwargs):
 
     model, args, old_args, save_state = load_pretrained(model, args)
     model = model.to(device)
-    args.model = model_name = old_args.model
+    args.model = old_args.model
 
     full_run_name, logging_file_name = setup_tracking_and_logging(args, rank, append_model_path=model_path)
 
@@ -106,20 +108,34 @@ def evaluate(model, dataset, **kwargs):
 
     val_criterion = LabelSmoothingCrossEntropy(smoothing=args.label_smoothing)
     if rank == 0:
-        logging.info(f"start evaluation")
+        logging.info("start evaluation")
         logging.info(f"Run name: '{full_run_name}'")
         logging.info(f"Logging file name: '{logging_file_name}'")
 
     if rank == 0:
-        val_time, val_loss, val_accs = _evaluate(model.to(device), val_loader, epoch=save_state["epoch"] - 1,
-                                                 rank=rank, device=device, world_size=world_size,
-                                                 val_criterion=val_criterion, args=args)
+        val_time, val_loss, val_accs = _evaluate(
+            model.to(device),
+            val_loader,
+            epoch=save_state["epoch"] - 1,
+            rank=rank,
+            device=device,
+            world_size=world_size,
+            val_criterion=val_criterion,
+            args=args,
+        )
         log_s = f"Evaluation done in {val_time}s: loss={val_loss}"
         for key, val in val_accs.items():
             log_s += f", {key}={val}%"
         logging.info(log_s)
     else:
-        _evaluate(model.to(device), val_loader, epoch=save_state["epoch"] - 1, rank=rank, device=device,
-                  world_size=world_size, val_criterion=val_criterion)
+        _evaluate(
+            model.to(device),
+            val_loader,
+            epoch=save_state["epoch"] - 1,
+            rank=rank,
+            device=device,
+            world_size=world_size,
+            val_criterion=val_criterion,
+        )
 
     ddp_cleanup()

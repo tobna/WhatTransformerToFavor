@@ -40,7 +40,7 @@ def accuracy(output, target, topk=1, dict_key="acc{}"):
         target = target.argmax(dim=-1)
     max_k = topk if isinstance(topk, int) else max(topk)
     top_guesses = output.topk(max_k).indices.t()
-    consonance = (top_guesses == target.reshape(1, -1))
+    consonance = top_guesses == target.reshape(1, -1)
     if isinstance(topk, int):
         return consonance.reshape(-1).sum().item() / batch_size
     return {dict_key.format(k): consonance[:k].reshape(-1).sum().item() / batch_size for k in topk}
@@ -82,13 +82,13 @@ def calculate_metrics(args, model, rank=0, input=None, device=None, did_training
 
     model.eval()
 
-    metrics["macs"] = macs(args, model._orig_mod if hasattr(model, '_orig_mod') else model, input, n_ims=n_ims)
+    metrics["macs"] = macs(args, model._orig_mod if hasattr(model, "_orig_mod") else model, input, n_ims=n_ims)
     try:
-        metrics["flops"] = flops(args, model._orig_mod if hasattr(model, '_orig_mod') else model, input, n_ims=n_ims)
+        metrics["flops"] = flops(args, model._orig_mod if hasattr(model, "_orig_mod") else model, input, n_ims=n_ims)
     except RuntimeError as e:
         metrics["flops"] = metrics["macs"]
         logging.warning(f"Failed to calculate flops: {e}")
-        logging.warning(f"Setting flops equal to macs!")
+        logging.warning("Setting flops equal to macs!")
 
     if device is None:
         return metrics
@@ -230,7 +230,6 @@ def inference_memory(args, model, input, device, batch_sizes=[1, 32, 64, 128]):
 
 def _add_handler(inputs, outputs):
     out_shape = _get_cval_shape(outputs[0])
-    in_shapes = [_get_cval_shape(x) for x in inputs]
     # print(in_shapes, out_shape)
     # assert in_shapes[0][1:] == in_shapes[1][1:] and (in_shapes[0][0] == in_shapes[1][0] or in_shapes[1][0] == 1), \
     #     f"Got incompatible shapes for adding: {in_shapes}"
@@ -238,7 +237,6 @@ def _add_handler(inputs, outputs):
 
 
 def _mul_handler(inputs, outputs):
-    in_shapes = _get_cval_shape(inputs)
     out_shapes = _get_cval_shape(outputs)
     # assert len(in_shapes[1]) <= 1 or len(in_shapes[0]) <= 1 or in_shapes[1][1:] == [1, 1] or (len(in_shapes[0]) == len(in_shapes[1]) and all(x == y == out or (x == 1 and y == out) or (y == 1 and x == out) for x, y, out in zip(in_shapes[0], in_shapes[1], out_shapes[0]))), \
     #     f"mul_handler found in_shapes: {in_shapes} -> {out_shapes[0]}"
@@ -263,7 +261,6 @@ def _gelu_handler(inputs, outputs):
 
 def _div_handler(inputs, outputs):
     out_shapes = _get_cval_shape(outputs)
-    in_shapes = _get_cval_shape(inputs)
 
     return prod(out_shapes[0])
 
@@ -301,7 +298,6 @@ def _cumsum_handler(inputs, outputs):
 
 def _pow_handler(inputs, outputs):
     out_shapes = _get_cval_shape(outputs)[0]
-    in_shapes = _get_cval_shape(inputs)[0]
 
     # print(f"pow map: {in_shapes} -> {out_shapes}")
 
@@ -368,7 +364,7 @@ def _rfft2_handler(inputs, outputs):
     for i, (d_in, d_out) in enumerate(zip(in_shape, out_shape)):
         if d_in != d_out:
             d_i_1 = i
-            d_i_2 = i-1
+            d_i_2 = i - 1
             break
 
     # FLOPS are approximate 2.5 * N * log_2(N) (taken from http://www.fftw.org/speed/method.html -> Cooley-Tukey algorithm)
@@ -386,7 +382,7 @@ def _irfft2_handler(inputs, outputs):
     for i, (d_in, d_out) in enumerate(zip(in_shape, out_shape)):
         if d_in != d_out:
             d_i_1 = i
-            d_i_2 = i-1
+            d_i_2 = i - 1
             break
 
     # FLOPS are approximate 2.5 * N * log_2(N) (taken from http://www.fftw.org/speed/method.html -> Cooley-Tukey algorithm)
@@ -404,7 +400,7 @@ def _fft2_handler(inputs, outputs):
     for i, (d_in, d_out) in enumerate(zip(in_shape, out_shape)):
         if d_in != d_out:
             d_i_1 = i
-            d_i_2 = i-1
+            d_i_2 = i - 1
             break
 
     # FLOPS are approximate 5 * N * log_2(N) (taken from http://www.fftw.org/speed/method.html -> Cooley-Tukey algorithm)
@@ -578,11 +574,11 @@ def throughput(args, model, input, device, iters=100):
 
     memory_allocated = {n_ims: max_alloc}
 
-    if max_alloc <= (total_mem-250_000) // 2:
+    if max_alloc <= (total_mem - 250_000) // 2:
         input = torch.cat((input, input), dim=0)
         n_ims *= 2
     else:
-        input = input[:input.shape[0]//2]
+        input = input[: input.shape[0] // 2]
         n_ims = n_ims // 2
 
     with torch.cuda.amp.autocast() if args.eval_amp else nullcontext():
@@ -591,7 +587,7 @@ def throughput(args, model, input, device, iters=100):
     max_alloc = max_mem_allocated(device, reset_max=True)
 
     memory_allocated[n_ims] = max_alloc
-    pred_double = linear_regession(memory_allocated)(2*n_ims)
+    pred_double = linear_regession(memory_allocated)(2 * n_ims)
 
     torch.cuda.empty_cache()
     while pred_double <= total_mem - 500_000_000:
@@ -604,10 +600,11 @@ def throughput(args, model, input, device, iters=100):
         except torch.cuda.OutOfMemoryError:
             break
         except RuntimeError as e:
-            logging.error(f"RuntimeError '{e}' when calculating throughput (@{n_ims}). "
-                          f"Might come from out- or input tensor size >2**31 (max int32_t).")
-            logging.error(f"Stacktrace:\n"
-                          f"{''.join(traceback.TracebackException.from_exception(e).format())}")
+            logging.error(
+                f"RuntimeError '{e}' when calculating throughput (@{n_ims}). "
+                f"Might come from out- or input tensor size >2**31 (max int32_t)."
+            )
+            logging.error(f"Stacktrace:\n" f"{''.join(traceback.TracebackException.from_exception(e).format())}")
             break
         max_alloc = max_mem_allocated(device, reset_max=True)
         memory_allocated[n_ims] = max_alloc
@@ -618,8 +615,10 @@ def throughput(args, model, input, device, iters=100):
     a = reg_line(1) - b
 
     assert input.shape[0] == n_ims, f"Found input of shape {input.shape}. Should have {n_ims} images."
-    test_bs = set([int(2 * n_ims / i) for i in range(1, 9)] +
-                  [int((total_mem - offset - b) / a) for offset in [250_000_000, 100_000_000, 0]])
+    test_bs = set(
+        [int(2 * n_ims / i) for i in range(1, 9)]
+        + [int((total_mem - offset - b) / a) for offset in [250_000_000, 100_000_000, 0]]
+    )
     test_bs = {2 ** math.floor(math.log2(bs)) for bs in test_bs if bs > 4}
     test_bs = {bs - (bs % 16) for bs in test_bs}.union(test_bs)
 
@@ -677,4 +676,4 @@ def _measure_throughput(model, input, iters=1000, eval_amp=False):
                 ender.record()
                 torch.cuda.synchronize()
                 total_time += starter.elapsed_time(ender) / 1000  # ms -> s
-    return iters * input.shape[0]/total_time
+    return iters * input.shape[0] / total_time

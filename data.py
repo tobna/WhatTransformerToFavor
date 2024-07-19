@@ -1,21 +1,29 @@
 """
 Module to load the datasets, using torch and datadings.
 """
+
 from random import uniform
 
 import torch
 from PIL import ImageFilter
-from torchvision.datasets import CIFAR10, CIFAR100
+from torchvision.datasets import CIFAR10
 from datadings.reader import MsgpackReader
 from datadings.torch import CompressedToPIL, Compose, Dataset
 import torchvision.transforms as tv_transforms
-from types import MethodType
-import msgpack
-from collections import abc
 from torch.utils.data import DataLoader, DistributedSampler
-from torch.nn import Module
-from torchvision.transforms import Resize, InterpolationMode, CenterCrop, RandomCrop, RandomHorizontalFlip, Grayscale, \
-    RandomSolarize, RandomChoice, ColorJitter, Normalize, ToTensor
+from torchvision.transforms import (
+    Resize,
+    InterpolationMode,
+    CenterCrop,
+    RandomCrop,
+    RandomHorizontalFlip,
+    Grayscale,
+    RandomSolarize,
+    RandomChoice,
+    ColorJitter,
+    Normalize,
+    ToTensor,
+)
 
 
 class IndividualAugmenter(torch.nn.Module):
@@ -81,13 +89,13 @@ def data_augmentation(args, as_list=False, test=False):
 
     if not test:
         if args.aug_flip:
-            augs.append(RandomHorizontalFlip(p=.5))
+            augs.append(RandomHorizontalFlip(p=0.5))
 
         augs_choice = []
         if args.aug_grayscale:
             augs_choice.append(Grayscale(num_output_channels=3))
         if args.aug_solarize:
-            augs_choice.append(RandomSolarize(threshold=128, p=1.))
+            augs_choice.append(RandomSolarize(threshold=128, p=1.0))
         if args.aug_gauss_blur:
             # TODO: check kernel size?
             # augs_choice.append(GaussianBlur(kernel_size=7))
@@ -96,9 +104,10 @@ def data_augmentation(args, as_list=False, test=False):
         if len(augs_choice) > 0:
             augs.append(RandomChoice(augs_choice))
 
-        if args.aug_color_jitter_factor > 0.:
+        if args.aug_color_jitter_factor > 0.0:
             augs.append(
-                ColorJitter(args.aug_color_jitter_factor, args.aug_color_jitter_factor, args.aug_color_jitter_factor))
+                ColorJitter(args.aug_color_jitter_factor, args.aug_color_jitter_factor, args.aug_color_jitter_factor)
+            )
 
     augs.append(ToTensor())
     if args.aug_normalize:
@@ -113,7 +122,8 @@ class QuickGaussBlur:
     """
     Gaussian blur transformation using PIL ImageFilter
     """
-    def __init__(self, sigma=(.2, 2.)):
+
+    def __init__(self, sigma=(0.2, 2.0)):
         """
 
         Parameters
@@ -168,11 +178,11 @@ def collate_imnet(data):
         images, labels
     """
 
-    if isinstance(data[0]['image'], torch.Tensor):
-        ims = torch.stack([d['image'] for d in data], dim=0)
+    if isinstance(data[0]["image"], torch.Tensor):
+        ims = torch.stack([d["image"] for d in data], dim=0)
     else:
-        ims = [d['image'] for d in data]
-    labels = torch.tensor([d['label'] for d in data])
+        ims = [d["image"] for d in data]
+    labels = torch.tensor([d["label"] for d in data])
     # keys = [d['key'] for d in data]
     return ims, labels  # , keys
 
@@ -201,25 +211,27 @@ def prepare_dataset(dataset_name, args, transform=None, train=True, rank=None):
         the data loader, and number of classes
     """
     if transform is None:
-        if args.augment_strategy == '3-augment':
+        if args.augment_strategy == "3-augment":
             transform = data_augmentation(args, as_list=True, test=not train)
         else:
             raise NotImplementedError(f"Augmentation strategy {args.augment_strategy} is not implemented (yet).")
 
     dataset_name = dataset_name.lower()
-    if dataset_name == 'cifar10':
-        dataset = CIFAR10(root=args.dataset_root + "CIFAR", train=train, download=False, transform=tv_transforms.Compose(transform))
+    if dataset_name == "cifar10":
+        dataset = CIFAR10(
+            root=args.dataset_root + "CIFAR", train=train, download=False, transform=tv_transforms.Compose(transform)
+        )
         n_classes, collate = 10, None
 
-    elif dataset_name in ['imagenet', 'imagenet21k']:
+    elif dataset_name in ["imagenet", "imagenet21k"]:
         reader = MsgpackReader(f"{args.dataset_root}imagenet/msgpack/{'train' if train else 'val'}.msgpack")
-        if '21k' in dataset_name:
+        if "21k" in dataset_name:
             reader = MsgpackReader(f"{args.dataset_root}imagenet21k/{'train' if train else 'val'}.msgpack")
 
-        dataset = Dataset(reader, transforms={'image': Compose([CompressedToPIL()] + transform)})
+        dataset = Dataset(reader, transforms={"image": Compose([CompressedToPIL()] + transform)})
 
         n_classes, collate = 1000, collate_imnet
-        if '21k' in dataset_name:
+        if "21k" in dataset_name:
             n_classes = 10_450
 
     else:
@@ -230,12 +242,16 @@ def prepare_dataset(dataset_name, args, transform=None, train=True, rank=None):
     else:
         sampler = None
 
-    data_loader = DataLoader(dataset, batch_size=args.batch_size, pin_memory=args.pin_memory,
-                             num_workers=args.num_workers, drop_last=train,
-                             prefetch_factor=args.prefetch_factor if args.num_workers > 0 else 2,
-                             persistent_workers=(args.num_workers > 0), collate_fn=collate,
-                             shuffle=None if sampler else train and args.shuffle, sampler=sampler)
+    data_loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        pin_memory=args.pin_memory,
+        num_workers=args.num_workers,
+        drop_last=train,
+        prefetch_factor=args.prefetch_factor if args.num_workers > 0 else 2,
+        persistent_workers=(args.num_workers > 0),
+        collate_fn=collate,
+        shuffle=None if sampler else train and args.shuffle,
+        sampler=sampler,
+    )
     return data_loader, n_classes
-
-
-

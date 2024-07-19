@@ -1,22 +1,23 @@
 """
 Utils and small helper functions
 """
+
 import shutil
 import warnings
 import numpy as np
 import torch
-from math import ceil, log
 from dataclasses import dataclass
 
 from timm.utils import NativeScaler, dispatch_clip_grad
 from torchvision.transforms import transforms
 
-from config import *
+from config import default_kwargs, dataset_root, results_folder, logging_folder  # noqa: F401  # is used in prep_kwargs
 import torch.distributed as dist
 import os
-from collections import abc
 from math import cos, pi
 import logging
+import collections.abc
+from itertools import repeat
 
 
 @dataclass
@@ -52,7 +53,9 @@ class SchedulerArgs:
     cooldown_epochs: int = 0
 
 
-def scheduler_function_factory(epochs, sched, warmup_epochs=0, lr=None, min_lr=0., warmup_sched=None, warmup_lr=None, offset=-1, **kwargs):
+def scheduler_function_factory(
+    epochs, sched, warmup_epochs=0, lr=None, min_lr=0.0, warmup_sched=None, warmup_lr=None, offset=-1, **kwargs
+):
     """Creates a scheduler factor function.
 
     Parameters
@@ -78,32 +81,49 @@ def scheduler_function_factory(epochs, sched, warmup_epochs=0, lr=None, min_lr=0
         the scheduling factor function
     """
     sched = sched.lower()
-    warmup_f = lambda ep: 1.
+
+    def warmup_f(ep):
+        return 1.0
+
     if warmup_epochs > 0:
-        assert warmup_lr is not None, f"Need warmup_lr, but got None"
+        assert warmup_lr is not None, "Need warmup_lr, but got None"
         warmup_lr_factor = warmup_lr / lr
-        if warmup_sched == 'linear':
-            warmup_f = lambda ep: warmup_lr_factor + (1 - warmup_lr_factor) * max(ep, 0.) / warmup_epochs
-        elif warmup_sched == 'const':
-            warmup_f = lambda ep: warmup_lr_factor
+        if warmup_sched == "linear":
+
+            def warmup_f(ep):
+                return warmup_lr_factor + (1 - warmup_lr_factor) * max(ep, 0.0) / warmup_epochs
+
+        elif warmup_sched == "const":
+
+            def warmup_f(ep):
+                return warmup_lr_factor
+
         else:
             raise NotImplementedError(f"Warmup schedule {warmup_sched} not implemented")
 
     epochs = epochs - warmup_epochs + offset
-    if sched == 'cosine':
+    if sched == "cosine":
         # cos from 0 to pi
-        main_f = lambda ep: cos(pi * ep / epochs) / 2 + .5
+        def main_f(ep):
+            return cos(pi * ep / epochs) / 2 + 0.5
 
-    elif sched == 'const':
-        main_f = lambda ep: 1.
+    elif sched == "const":
+
+        def main_f(ep):
+            return 1.0
+
     else:
         raise NotImplementedError(f"Schedule {sched} is not implemented.")
 
     # rescale and add min_lr
     min_lr_fact = min_lr / lr
-    main_f_with_min_lr = lambda ep: (1 - min_lr_fact) * main_f(ep) + min_lr_fact
 
-    return lambda ep: warmup_f(ep + offset) if ep + offset < warmup_epochs else main_f_with_min_lr(ep + offset - warmup_epochs)
+    def main_f_with_min_lr(ep):
+        return (1 - min_lr_fact) * main_f(ep) + min_lr_fact
+
+    return lambda ep: (
+        warmup_f(ep + offset) if ep + offset < warmup_epochs else main_f_with_min_lr(ep + offset - warmup_epochs)
+    )
 
 
 class DotDict(dict):
@@ -163,15 +183,14 @@ def prep_kwargs(kwargs):
     return DotDict(kwargs)
 
 
-__pos_encoding_matrices = {'trig': {}}
-
-
 def denormalize(x, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
-    operation = transforms.Normalize(mean=[-mu/sigma for mu, sigma in zip(mean, std)], std=[1/sigma for sigma in std])
+    operation = transforms.Normalize(
+        mean=[-mu / sigma for mu, sigma in zip(mean, std)], std=[1 / sigma for sigma in std]
+    )
     return operation(x)
 
 
-def ddp_setup():
+def ddp_setup(use_cuda=True):
     """Set up the distributed environment.
 
     Returns
@@ -189,22 +208,28 @@ def ddp_setup():
     The 'nccl' backend is used.
     """
 
-    rank = int(os.getenv('RANK', 0))
-    local_rank = int(os.getenv('LOCAL_RANK', 0))
-    num_gpus = int(os.getenv('WORLD_SIZE', 1))
-    distributed = 'RANK' in os.environ
+    rank = int(os.getenv("RANK", 0))
+    local_rank = int(os.getenv("LOCAL_RANK", 0))
+    num_gpus = int(os.getenv("WORLD_SIZE", 1))
+    distributed = "RANK" in os.environ
     if distributed:
         # print(f"rank {rank}, local rank {local_rank}, world size {num_gpus}")
         # print(f"cuda available {torch.cuda.is_available()} on {torch.cuda.device_count()} devices")
-        dist.init_process_group('nccl')
-    return distributed, torch.device(f'cuda:{local_rank}'), num_gpus, rank, local_rank
+        dist.init_process_group("nccl")
+    return distributed, torch.device(f"cuda:{local_rank}") if use_cuda else "cpu", num_gpus, rank, local_rank
 
 
-def ddp_cleanup():
+def ddp_cleanup(args):
     """
     Cleans the distributed setup after use.
     """
-    if 'RANK' in os.environ:
+    if args.distributed:
+        logging.info("waiting for all processes to finish")
+        dist.barrier()
+        logging.info("exiting now")
+        exit(0)
+
+    if "RANK" in os.environ:
         dist.destroy_process_group()
 
 
@@ -213,8 +238,9 @@ def set_filter_warnings():
     Filter out some warnings to reduce spam
     """
     # filter DataLoader number of workers warning
-    warnings.filterwarnings("ignore",
-                            ".*worker processes in total. Our suggested max number of worker in current system is.*")
+    warnings.filterwarnings(
+        "ignore", ".*worker processes in total. Our suggested max number of worker in current system is.*"
+    )
 
     # Filter datadings only varargs warning
     warnings.filterwarnings("ignore", ".*only accepts varargs so.*")
@@ -227,6 +253,9 @@ def set_filter_warnings():
 
     # Filter warnings from meshgrid
     warnings.filterwarnings("ignore", ".*in an upcoming release, it will be required to pass the indexing.*")
+
+    # Filter warnings from timm when overwriting models
+    warnings.filterwarnings("ignore", ".*UserWarning: Overwriting .*")
 
 
 def remove_prefix(state_dict, prefix="module."):
@@ -252,7 +281,7 @@ def remove_prefix(state_dict, prefix="module."):
     {'layer1.weight': 1, 'layer1.bias': 2}
     """
 
-    return {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
+    return {k[len(prefix) :] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
 
 
 def prime_factors(n):
@@ -310,7 +339,18 @@ def linear_regession(points):
     return lambda z: a * z + b
 
 
-def save_model_state(model_folder, epoch, args, model_state, regular_save=True, stats=None, val_accs=None, epoch_accs=None, additional_reason='', **kwargs):
+def save_model_state(
+    model_folder,
+    epoch,
+    args,
+    model_state,
+    regular_save=True,
+    stats=None,
+    val_accs=None,
+    epoch_accs=None,
+    additional_reason="",
+    **kwargs,
+):
     """
 
     Parameters
@@ -319,7 +359,7 @@ def save_model_state(model_folder, epoch, args, model_state, regular_save=True, 
         folder path to save model in
     epoch : int
         the current epoch
-    args : dict[str, Any]
+    args : DotDict[str, Any]
         all arguments
     model_state : dict[str, torch.Tensor]
         model state dict
@@ -339,17 +379,19 @@ def save_model_state(model_folder, epoch, args, model_state, regular_save=True, 
 
     """
     # make args dict, not DotDict to be able to save it
-    state = {'epoch': epoch, 'model_state': model_state, 'run_name': args.run_name, 'args': dict(args)}
+    state = {"epoch": epoch, "model_state": model_state, "run_name": args.run_name, "args": dict(args)}
     if stats is None:
         stats = {}
     if val_accs is not None:
         stats = {**stats, **val_accs}
     if epoch_accs is not None:
         stats = {**stats, **epoch_accs}
-    state['stats'] = stats
+    state["stats"] = stats
     state = {**state, **kwargs}
     logging.info(f"saving model state at epoch {epoch} ({additional_reason})")
-    regular_file_name = f"ep_{epoch}{f'_acc_{int(100 * min(val_accs.values()))}' if val_accs is not None else ''}.tar"
+    regular_file_name = (
+        f"ep_{epoch}{f'_{args.perf_metric}_{int(100 * min(val_accs.values()))}' if val_accs is not None else ''}.tar"
+    )
     if len(additional_reason) > 0:
         save_name = additional_reason + ".tar"
     else:
@@ -377,7 +419,8 @@ class ScalerGradNormReturn(NativeScaler):
     >>> optimizer.zero_grad()
     >>> grad_norm = scaler(loss, optimizer, clip_grad=1.0, parameters=model.parameters())
     """
-    def __call__(self, loss, optimizer, clip_grad=None, clip_mode='norm', parameters=None, create_graph=False):
+
+    def __call__(self, loss, optimizer, clip_grad=None, clip_mode="norm", parameters=None, create_graph=False):
         """
         Scale and backpropagate through the loss tensor, and return the gradient norm of the selected parameters.
         Does an optimizer step.
@@ -427,6 +470,7 @@ class NoScaler:
     This scaler performs a simple backward pass with the given loss, and then updates the model's parameters
     with the given optimizer. The resulting gradient norm is computed and returned.
     """
+
     def __call__(self, loss, optimizer, parameters=None, **kwargs):
         """
         Performs backward pass with the given loss, updates the model's parameters with the given optimizer, and
@@ -457,3 +501,41 @@ class NoScaler:
             grad_norm = -1
         optimizer.step()
         return grad_norm
+
+
+def get_cpu_name():
+    """
+    Get the name of the CPU.
+
+    Returns
+    -------
+    str
+        The name of the CPU.
+    """
+    with open("/proc/cpuinfo", "r") as f:
+        for line in f:
+            if line.startswith("model name"):
+                return line.split(":")[1].strip()
+    return "unknown"
+
+
+# From PyTorch internals
+def _ntuple(n):
+    def parse(x):
+        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
+            return tuple(x)
+        return tuple(repeat(x, n))
+
+    return parse
+
+
+to_2tuple = _ntuple(2)
+
+
+def make_divisible(v, divisor=8, min_value=None, round_limit=0.9):
+    min_value = min_value or divisor
+    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
+    # Make sure that round down does not go down by more than 10%.
+    if new_v < round_limit * v:
+        new_v += divisor
+    return new_v
