@@ -20,8 +20,17 @@ from resizing_interface import ResizingInterface
 
 
 class FocalModulation(nn.Module):
-    def __init__(self, dim, focal_window, focal_level, focal_factor=2, bias=True, proj_drop=0.,
-                 use_postln_in_modulation=False, normalize_modulator=False):
+    def __init__(
+        self,
+        dim,
+        focal_window,
+        focal_level,
+        focal_factor=2,
+        bias=True,
+        proj_drop=0.0,
+        use_postln_in_modulation=False,
+        normalize_modulator=False,
+    ):
         super().__init__()
 
         self.dim = dim
@@ -44,8 +53,9 @@ class FocalModulation(nn.Module):
             kernel_size = self.focal_factor * k + self.focal_window
             self.focal_layers.append(
                 nn.Sequential(
-                    nn.Conv2d(dim, dim, kernel_size=kernel_size, stride=1,
-                              groups=dim, padding=kernel_size // 2, bias=False),
+                    nn.Conv2d(
+                        dim, dim, kernel_size=kernel_size, stride=1, groups=dim, padding=kernel_size // 2, bias=False
+                    ),
                     nn.GELU(),
                 )
             )
@@ -66,11 +76,11 @@ class FocalModulation(nn.Module):
 
         # context aggreation
         ctx_all = 0
-        for l in range(self.focal_level):
-            ctx = self.focal_layers[l](ctx)
-            ctx_all = ctx_all + ctx * self.gates[:, l:l + 1]
+        for lvl in range(self.focal_level):
+            ctx = self.focal_layers[lvl](ctx)
+            ctx_all = ctx_all + ctx * self.gates[:, lvl : lvl + 1]
         ctx_global = self.act(ctx.mean(2, keepdim=True).mean(3, keepdim=True))
-        ctx_all = ctx_all + ctx_global * self.gates[:, self.focal_level:]
+        ctx_all = ctx_all + ctx_global * self.gates[:, self.focal_level :]
 
         # normalize context
         if self.normalize_modulator:
@@ -89,7 +99,7 @@ class FocalModulation(nn.Module):
         return x_out
 
     def extra_repr(self) -> str:
-        return f'dim={self.dim}'
+        return f"dim={self.dim}"
 
     def flops(self, N):
         # calculate flops for 1 window with token length of N
@@ -113,7 +123,7 @@ class FocalModulation(nn.Module):
 
 
 class FocalNetBlock(nn.Module):
-    r""" Focal Modulation Network Block.
+    r"""Focal Modulation Network Block.
 
     Args:
         dim (int): Number of input channels.
@@ -130,12 +140,23 @@ class FocalNetBlock(nn.Module):
         use_postln (bool): Whether use layernorm after modulation
     """
 
-    def __init__(self, dim, input_resolution, mlp_ratio=4., drop=0., drop_path=0.,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm,
-                 focal_level=1, focal_window=3,
-                 use_layerscale=False, layerscale_value=1e-4,
-                 use_postln=False, use_postln_in_modulation=False,
-                 normalize_modulator=False):
+    def __init__(
+        self,
+        dim,
+        input_resolution,
+        mlp_ratio=4.0,
+        drop=0.0,
+        drop_path=0.0,
+        act_layer=nn.GELU,
+        norm_layer=nn.LayerNorm,
+        focal_level=1,
+        focal_window=3,
+        use_layerscale=False,
+        layerscale_value=1e-4,
+        use_postln=False,
+        use_postln_in_modulation=False,
+        normalize_modulator=False,
+    ):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
@@ -147,11 +168,15 @@ class FocalNetBlock(nn.Module):
 
         self.norm1 = norm_layer(dim)
         self.modulation = FocalModulation(
-            dim, proj_drop=drop, focal_window=focal_window, focal_level=self.focal_level,
-            use_postln_in_modulation=use_postln_in_modulation, normalize_modulator=normalize_modulator
+            dim,
+            proj_drop=drop,
+            focal_window=focal_window,
+            focal_level=self.focal_level,
+            use_postln_in_modulation=use_postln_in_modulation,
+            normalize_modulator=normalize_modulator,
         )
 
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -183,8 +208,7 @@ class FocalNetBlock(nn.Module):
         return x
 
     def extra_repr(self) -> str:
-        return f"dim={self.dim}, input_resolution={self.input_resolution}, " \
-               f"mlp_ratio={self.mlp_ratio}"
+        return f"dim={self.dim}, input_resolution={self.input_resolution}, " f"mlp_ratio={self.mlp_ratio}"
 
     def flops(self):
         flops = 0
@@ -203,7 +227,7 @@ class FocalNetBlock(nn.Module):
 
 
 class PatchEmbed(nn.Module):
-    r""" Image to Patch Embedding
+    r"""Image to Patch Embedding
     Args:
         img_size (int): Image size.  Default: 224.
         patch_size (int): Patch token size. Default: 4.
@@ -212,8 +236,16 @@ class PatchEmbed(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer. Default: None
     """
 
-    def __init__(self, img_size=(224, 224), patch_size=4, in_chans=3, embed_dim=96, use_conv_embed=False,
-                 norm_layer=None, is_stem=False):
+    def __init__(
+        self,
+        img_size=(224, 224),
+        patch_size=4,
+        in_chans=3,
+        embed_dim=96,
+        use_conv_embed=False,
+        norm_layer=None,
+        is_stem=False,
+    ):
         super().__init__()
         patch_size = to_2tuple(patch_size)
         patches_resolution = [img_size[0] // patch_size[0], img_size[1] // patch_size[1]]
@@ -263,7 +295,7 @@ class PatchEmbed(nn.Module):
 
 
 class BasicLayer(nn.Module):
-    """ A basic Focal Transformer layer for one stage.
+    """A basic Focal Transformer layer for one stage.
 
     Args:
         dim (int): Number of input channels.
@@ -285,15 +317,27 @@ class BasicLayer(nn.Module):
         use_postln (bool): Whether use layernorm after modulation
     """
 
-    def __init__(self, dim, out_dim, input_resolution, depth,
-                 mlp_ratio=4., drop=0., drop_path=0., norm_layer=nn.LayerNorm,
-                 downsample=None, use_checkpoint=False,
-                 focal_level=1, focal_window=1,
-                 use_conv_embed=False,
-                 use_layerscale=False, layerscale_value=1e-4,
-                 use_postln=False,
-                 use_postln_in_modulation=False,
-                 normalize_modulator=False):
+    def __init__(
+        self,
+        dim,
+        out_dim,
+        input_resolution,
+        depth,
+        mlp_ratio=4.0,
+        drop=0.0,
+        drop_path=0.0,
+        norm_layer=nn.LayerNorm,
+        downsample=None,
+        use_checkpoint=False,
+        focal_level=1,
+        focal_window=1,
+        use_conv_embed=False,
+        use_layerscale=False,
+        layerscale_value=1e-4,
+        use_postln=False,
+        use_postln_in_modulation=False,
+        normalize_modulator=False,
+    ):
 
         super().__init__()
         self.dim = dim
@@ -302,23 +346,26 @@ class BasicLayer(nn.Module):
         self.use_checkpoint = use_checkpoint
 
         # build blocks
-        self.blocks = nn.ModuleList([
-            FocalNetBlock(
-                dim=dim,
-                input_resolution=input_resolution,
-                mlp_ratio=mlp_ratio,
-                drop=drop,
-                drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
-                norm_layer=norm_layer,
-                focal_level=focal_level,
-                focal_window=focal_window,
-                use_layerscale=use_layerscale,
-                layerscale_value=layerscale_value,
-                use_postln=use_postln,
-                use_postln_in_modulation=use_postln_in_modulation,
-                normalize_modulator=normalize_modulator,
-            )
-            for i in range(depth)])
+        self.blocks = nn.ModuleList(
+            [
+                FocalNetBlock(
+                    dim=dim,
+                    input_resolution=input_resolution,
+                    mlp_ratio=mlp_ratio,
+                    drop=drop,
+                    drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
+                    norm_layer=norm_layer,
+                    focal_level=focal_level,
+                    focal_window=focal_window,
+                    use_layerscale=use_layerscale,
+                    layerscale_value=layerscale_value,
+                    use_postln=use_postln,
+                    use_postln_in_modulation=use_postln_in_modulation,
+                    normalize_modulator=normalize_modulator,
+                )
+                for i in range(depth)
+            ]
+        )
 
         if downsample is not None:
             self.downsample = downsample(
@@ -328,7 +375,7 @@ class BasicLayer(nn.Module):
                 embed_dim=out_dim,
                 use_conv_embed=use_conv_embed,
                 norm_layer=norm_layer,
-                is_stem=False
+                is_stem=False,
             )
         else:
             self.downsample = None
@@ -361,7 +408,7 @@ class BasicLayer(nn.Module):
 
 
 class FocalNet(nn.Module, ResizingInterface):
-    r""" Focal Modulation Networks (FocalNets)
+    r"""Focal Modulation Networks (FocalNets)
 
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
@@ -384,15 +431,34 @@ class FocalNet(nn.Module, ResizingInterface):
         use_postln (bool): Whether use layernorm after modulation (it helps stablize training of large models)
     """
 
-    def __init__(self, img_size=224, patch_size=4, in_chans=3, num_classes=1000, embed_dim=96, depths=[2, 2, 6, 2],
-                 mlp_ratio=4., drop_rate=0., drop_path_rate=0.1, norm_layer=nn.LayerNorm, patch_norm=True,
-                 use_checkpoint=False, focal_levels=[2, 2, 2, 2], focal_windows=[3, 3, 3, 3], use_conv_embed=False,
-                 use_layerscale=False, layerscale_value=1e-4, use_postln=False, use_postln_in_modulation=False,
-                 normalize_modulator=False, **kwargs):
+    def __init__(
+        self,
+        img_size=224,
+        patch_size=4,
+        in_chans=3,
+        num_classes=1000,
+        embed_dim=96,
+        depths=[2, 2, 6, 2],
+        mlp_ratio=4.0,
+        drop_rate=0.0,
+        drop_path_rate=0.1,
+        norm_layer=nn.LayerNorm,
+        patch_norm=True,
+        use_checkpoint=False,
+        focal_levels=[2, 2, 2, 2],
+        focal_windows=[3, 3, 3, 3],
+        use_conv_embed=False,
+        use_layerscale=False,
+        layerscale_value=1e-4,
+        use_postln=False,
+        use_postln_in_modulation=False,
+        normalize_modulator=False,
+        **kwargs,
+    ):
         super().__init__()
 
         self.num_layers = len(depths)
-        embed_dims = [embed_dim * (2 ** i) for i in range(self.num_layers)]
+        embed_dims = [embed_dim * (2**i) for i in range(self.num_layers)]
 
         self.num_classes = num_classes
         self.img_size = img_size
@@ -410,9 +476,9 @@ class FocalNet(nn.Module, ResizingInterface):
             embed_dim=embed_dims[0],
             use_conv_embed=use_conv_embed,
             norm_layer=norm_layer if self.patch_norm else None,
-            is_stem=True)
+            is_stem=True,
+        )
 
-        num_patches = self.patch_embed.num_patches
         patches_resolution = self.patch_embed.patches_resolution
         self.patches_resolution = patches_resolution
         self.pos_drop = nn.Dropout(p=drop_rate)
@@ -423,26 +489,26 @@ class FocalNet(nn.Module, ResizingInterface):
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
-            layer = BasicLayer(dim=embed_dims[i_layer],
-                               out_dim=embed_dims[i_layer + 1] if (i_layer < self.num_layers - 1) else None,
-                               input_resolution=(patches_resolution[0] // (2 ** i_layer),
-                                                 patches_resolution[1] // (2 ** i_layer)),
-                               depth=depths[i_layer],
-                               mlp_ratio=self.mlp_ratio,
-                               drop=drop_rate,
-                               drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
-                               norm_layer=norm_layer,
-                               downsample=PatchEmbed if (i_layer < self.num_layers - 1) else None,
-                               focal_level=focal_levels[i_layer],
-                               focal_window=focal_windows[i_layer],
-                               use_conv_embed=use_conv_embed,
-                               use_checkpoint=use_checkpoint,
-                               use_layerscale=use_layerscale,
-                               layerscale_value=layerscale_value,
-                               use_postln=use_postln,
-                               use_postln_in_modulation=use_postln_in_modulation,
-                               normalize_modulator=normalize_modulator
-                               )
+            layer = BasicLayer(
+                dim=embed_dims[i_layer],
+                out_dim=embed_dims[i_layer + 1] if (i_layer < self.num_layers - 1) else None,
+                input_resolution=(patches_resolution[0] // (2**i_layer), patches_resolution[1] // (2**i_layer)),
+                depth=depths[i_layer],
+                mlp_ratio=self.mlp_ratio,
+                drop=drop_rate,
+                drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
+                norm_layer=norm_layer,
+                downsample=PatchEmbed if (i_layer < self.num_layers - 1) else None,
+                focal_level=focal_levels[i_layer],
+                focal_window=focal_windows[i_layer],
+                use_conv_embed=use_conv_embed,
+                use_checkpoint=use_checkpoint,
+                use_layerscale=use_layerscale,
+                layerscale_value=layerscale_value,
+                use_postln=use_postln,
+                use_postln_in_modulation=use_postln_in_modulation,
+                normalize_modulator=normalize_modulator,
+            )
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
@@ -464,7 +530,7 @@ class FocalNet(nn.Module, ResizingInterface):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -473,11 +539,11 @@ class FocalNet(nn.Module, ResizingInterface):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        return {''}
+        return {""}
 
     @torch.jit.ignore
     def no_weight_decay_keywords(self):
-        return {''}
+        return {""}
 
     def forward_features(self, x):
         x, H, W = self.patch_embed(x)
@@ -500,7 +566,7 @@ class FocalNet(nn.Module, ResizingInterface):
         flops += self.patch_embed.flops()
         for i, layer in enumerate(self.layers):
             flops += layer.flops()
-        flops += self.num_features * self.patches_resolution[0] * self.patches_resolution[1] // (2 ** self.num_layers)
+        flops += self.num_features * self.patches_resolution[0] * self.patches_resolution[1] // (2**self.num_layers)
         flops += self.num_features * self.num_classes
         return flops
 
@@ -555,8 +621,16 @@ def focalnet_small_iso(pretrained=False, **kwargs):
 
 @register_model
 def focalnet_base_iso(pretrained=False, **kwargs):
-    model = FocalNet(depths=[12], patch_size=16, embed_dims=768, focal_levels=[3], focal_windows=[3],
-                     use_layerscale=True, use_postln=True, **kwargs)
+    model = FocalNet(
+        depths=[12],
+        patch_size=16,
+        embed_dims=768,
+        focal_levels=[3],
+        focal_windows=[3],
+        use_layerscale=True,
+        use_postln=True,
+        **kwargs,
+    )
     return model
 
 
@@ -597,7 +671,7 @@ def focalnet_huge_fl4(pretrained=False, **kwargs):
     return model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     img_size = 224
     x = torch.rand(16, 3, img_size, img_size).cuda()
     model = FocalNet(depths=[2, 2, 6, 2], embed_dims=96, focal_levels=[3, 3, 3, 3]).cuda()

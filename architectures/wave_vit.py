@@ -20,31 +20,24 @@ class Stem(nn.Module):
         super().__init__()
         hidden_dim = stem_hidden_dim
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dim, kernel_size=7, stride=2,
-                      padding=3, bias=False),  # 112x112
+            nn.Conv2d(in_channels, hidden_dim, kernel_size=7, stride=2, padding=3, bias=False),  # 112x112
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1,
-                      padding=1, bias=False),  # 112x112
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),  # 112x112
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1,
-                      padding=1, bias=False),  # 112x112
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),  # 112x112
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
         )
-        self.proj = nn.Conv2d(hidden_dim,
-                              out_channels,
-                              kernel_size=3,
-                              stride=2,
-                              padding=1)
+        self.proj = nn.Conv2d(hidden_dim, out_channels, kernel_size=3, stride=2, padding=1)
         self.norm = nn.LayerNorm(out_channels)
 
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -75,7 +68,7 @@ class DownSamples(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -150,10 +143,18 @@ class IDWT_Function(Function):
             dx = dx.contiguous()
 
             w_ll, w_lh, w_hl, w_hh = torch.unbind(filters, dim=0)
-            x_ll = torch.nn.functional.conv2d(dx, w_ll.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C)
-            x_lh = torch.nn.functional.conv2d(dx, w_lh.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C)
-            x_hl = torch.nn.functional.conv2d(dx, w_hl.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C)
-            x_hh = torch.nn.functional.conv2d(dx, w_hh.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C)
+            x_ll = torch.nn.functional.conv2d(
+                dx, w_ll.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C
+            )
+            x_lh = torch.nn.functional.conv2d(
+                dx, w_lh.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C
+            )
+            x_hl = torch.nn.functional.conv2d(
+                dx, w_hl.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C
+            )
+            x_hh = torch.nn.functional.conv2d(
+                dx, w_hh.to(dtype=dx.dtype).unsqueeze(1).expand(C, -1, -1, -1), stride=2, groups=C
+            )
             dx = torch.cat([x_ll, x_lh, x_hl, x_hh], dim=1)
         return dx, None
 
@@ -175,7 +176,7 @@ class IDWT_2D(nn.Module):
         w_hl = w_hl.unsqueeze(0).unsqueeze(1)
         w_hh = w_hh.unsqueeze(0).unsqueeze(1)
         filters = torch.cat([w_ll, w_lh, w_hl, w_hh], dim=0)
-        self.register_buffer('filters', filters)
+        self.register_buffer("filters", filters)
         self.filters = self.filters.to(dtype=torch.float16)
 
     def forward(self, x):
@@ -194,10 +195,10 @@ class DWT_2D(nn.Module):
         w_hl = dec_hi.unsqueeze(0) * dec_lo.unsqueeze(1)
         w_hh = dec_hi.unsqueeze(0) * dec_hi.unsqueeze(1)
 
-        self.register_buffer('w_ll', w_ll.unsqueeze(0).unsqueeze(0))
-        self.register_buffer('w_lh', w_lh.unsqueeze(0).unsqueeze(0))
-        self.register_buffer('w_hl', w_hl.unsqueeze(0).unsqueeze(0))
-        self.register_buffer('w_hh', w_hh.unsqueeze(0).unsqueeze(0))
+        self.register_buffer("w_ll", w_ll.unsqueeze(0).unsqueeze(0))
+        self.register_buffer("w_lh", w_lh.unsqueeze(0).unsqueeze(0))
+        self.register_buffer("w_hl", w_hl.unsqueeze(0).unsqueeze(0))
+        self.register_buffer("w_hh", w_hh.unsqueeze(0).unsqueeze(0))
 
         self.w_ll = self.w_ll.to(dtype=torch.float16)
         self.w_lh = self.w_lh.to(dtype=torch.float16)
@@ -213,11 +214,11 @@ class WaveAttention(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
         self.sr_ratio = sr_ratio
 
-        self.dwt = DWT_2D(wave='haar')
-        self.idwt = IDWT_2D(wave='haar')
+        self.dwt = DWT_2D(wave="haar")
+        self.idwt = IDWT_2D(wave="haar")
         self.reduce = nn.Sequential(
             nn.Conv2d(dim, dim // 4, kernel_size=1, padding=0, stride=1),
             nn.BatchNorm2d(dim // 4),
@@ -230,16 +231,13 @@ class WaveAttention(nn.Module):
         )
         self.kv_embed = nn.Conv2d(dim, dim, kernel_size=sr_ratio, stride=sr_ratio) if sr_ratio > 1 else nn.Identity()
         self.q = nn.Linear(dim, dim)
-        self.kv = nn.Sequential(
-            nn.LayerNorm(dim),
-            nn.Linear(dim, dim * 2)
-        )
+        self.kv = nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, dim * 2))
         self.proj = nn.Linear(dim + dim // 4, dim)
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -282,7 +280,7 @@ class Attention(nn.Module):
         self.dim = dim
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
 
         self.q = nn.Linear(dim, dim)
         self.kv = nn.Linear(dim, dim * 2)
@@ -291,7 +289,7 @@ class Attention(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -340,7 +338,7 @@ class PVT2FFN(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -364,22 +362,24 @@ class PVT2FFN(nn.Module):
 
 
 class WaveBlock(nn.Module):
-    def __init__(self, dim, num_heads, mlp_ratio, drop_path=0., norm_layer=nn.LayerNorm, sr_ratio=1, block_type='wave'):
+    def __init__(
+        self, dim, num_heads, mlp_ratio, drop_path=0.0, norm_layer=nn.LayerNorm, sr_ratio=1, block_type="wave"
+    ):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.norm2 = norm_layer(dim)
 
-        if block_type == 'std_att':
+        if block_type == "std_att":
             self.attn = Attention(dim, num_heads)
         else:
             self.attn = WaveAttention(dim, num_heads, sr_ratio)
         self.mlp = PVT2FFN(in_features=dim, hidden_features=int(dim * mlp_ratio))
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -408,7 +408,7 @@ class FFN(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -434,7 +434,7 @@ class ClassAttention(nn.Module):
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.head_dim = head_dim
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
         self.kv = nn.Linear(dim, dim * 2)
         self.q = nn.Linear(dim, dim)
         self.proj = nn.Linear(dim, dim)
@@ -442,7 +442,7 @@ class ClassAttention(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -460,7 +460,7 @@ class ClassAttention(nn.Module):
         kv = self.kv(x).reshape(B, N, 2, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         k, v = kv[0], kv[1]
         q = self.q(x[:, :1, :]).reshape(B, self.num_heads, 1, self.head_dim)
-        attn = ((q * self.scale) @ k.transpose(-2, -1))
+        attn = (q * self.scale) @ k.transpose(-2, -1)
         attn = attn.softmax(dim=-1)
         cls_embed = (attn @ v).transpose(1, 2).reshape(B, 1, self.head_dim * self.num_heads)
         cls_embed = self.proj(cls_embed)
@@ -478,7 +478,7 @@ class ClassBlock(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -501,7 +501,7 @@ class ClassBlock(nn.Module):
 def rand_bbox(size, lam, scale=1):
     W = size[1] // scale
     H = size[2] // scale
-    cut_rat = np.sqrt(1. - lam)
+    cut_rat = np.sqrt(1.0 - lam)
     cut_w = np.int(W * cut_rat)
     cut_h = np.int(H * cut_rat)
 
@@ -518,9 +518,22 @@ def rand_bbox(size, lam, scale=1):
 
 
 class WaveViT(nn.Module, ResizingInterface):
-    def __init__(self, in_chans=3, num_classes=1000, stem_hidden_dim=32, embed_dims=[64, 128, 320, 448],
-                 num_heads=[2, 4, 10, 14], mlp_ratios=[8, 8, 4, 4], drop_path_rate=0., norm_layer=nn.LayerNorm,
-                 depths=[3, 4, 6, 3], sr_ratios=[4, 2, 1, 1], num_stages=4, token_label=False, **kwargs):
+    def __init__(
+        self,
+        in_chans=3,
+        num_classes=1000,
+        stem_hidden_dim=32,
+        embed_dims=[64, 128, 320, 448],
+        num_heads=[2, 4, 10, 14],
+        mlp_ratios=[8, 8, 4, 4],
+        drop_path_rate=0.0,
+        norm_layer=nn.LayerNorm,
+        depths=[3, 4, 6, 3],
+        sr_ratios=[4, 2, 1, 1],
+        num_stages=4,
+        token_label=False,
+        **kwargs,
+    ):
         super().__init__()
         self.num_classes = num_classes
         self.depths = depths
@@ -535,15 +548,20 @@ class WaveViT(nn.Module, ResizingInterface):
             else:
                 patch_embed = DownSamples(embed_dims[i - 1], embed_dims[i])
 
-            block = nn.ModuleList([WaveBlock(
-                dim=embed_dims[i],
-                num_heads=num_heads[i],
-                mlp_ratio=mlp_ratios[i],
-                drop_path=dpr[cur + j],
-                norm_layer=norm_layer,
-                sr_ratio=sr_ratios[i],
-                block_type='wave' if i < 2 else 'std_att')
-                for j in range(depths[i])])
+            block = nn.ModuleList(
+                [
+                    WaveBlock(
+                        dim=embed_dims[i],
+                        num_heads=num_heads[i],
+                        mlp_ratio=mlp_ratios[i],
+                        drop_path=dpr[cur + j],
+                        norm_layer=norm_layer,
+                        sr_ratio=sr_ratios[i],
+                        block_type="wave" if i < 2 else "std_att",
+                    )
+                    for j in range(depths[i])
+                ]
+            )
 
             norm = norm_layer(embed_dims[i])
             cur += depths[i]
@@ -552,15 +570,13 @@ class WaveViT(nn.Module, ResizingInterface):
             setattr(self, f"block{i + 1}", block)
             setattr(self, f"norm{i + 1}", norm)
 
-        post_layers = ['ca']
-        self.post_network = nn.ModuleList([
-            ClassBlock(
-                dim=embed_dims[-1],
-                num_heads=num_heads[-1],
-                mlp_ratio=mlp_ratios[-1],
-                norm_layer=norm_layer)
-            for _ in range(len(post_layers))
-        ])
+        post_layers = ["ca"]
+        self.post_network = nn.ModuleList(
+            [
+                ClassBlock(dim=embed_dims[-1], num_heads=num_heads[-1], mlp_ratio=mlp_ratios[-1], norm_layer=norm_layer)
+                for _ in range(len(post_layers))
+            ]
+        )
 
         # classification head
         self.head = nn.Linear(embed_dims[-1], num_classes) if num_classes > 0 else nn.Identity()
@@ -572,9 +588,7 @@ class WaveViT(nn.Module, ResizingInterface):
         self.beta = 1.0
         self.pooling_scale = 8
         if self.return_dense:
-            self.aux_head = nn.Linear(
-                embed_dims[-1],
-                num_classes) if num_classes > 0 else nn.Identity()
+            self.aux_head = nn.Linear(embed_dims[-1], num_classes) if num_classes > 0 else nn.Identity()
         ##################################### token_label #####################################
 
         self.apply(self._init_weights)
@@ -584,7 +598,7 @@ class WaveViT(nn.Module, ResizingInterface):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -637,8 +651,12 @@ class WaveViT(nn.Module, ResizingInterface):
                 patch_h, patch_w = x.shape[1] // self.pooling_scale, x.shape[2] // self.pooling_scale
                 bbx1, bby1, bbx2, bby2 = rand_bbox(x.size(), lam, scale=self.pooling_scale)
                 temp_x = x.clone()
-                sbbx1, sbby1, sbbx2, sbby2 = self.pooling_scale * bbx1, self.pooling_scale * bby1, \
-                                             self.pooling_scale * bbx2, self.pooling_scale * bby2
+                sbbx1, sbby1, sbbx2, sbby2 = (
+                    self.pooling_scale * bbx1,
+                    self.pooling_scale * bby1,
+                    self.pooling_scale * bbx2,
+                    self.pooling_scale * bby2,
+                )
                 temp_x[:, sbbx1:sbbx2, sbby1:sbby2, :] = x.flip(0)[:, sbbx1:sbbx2, sbby1:sbby2, :]
                 x = temp_x
             else:
@@ -646,9 +664,7 @@ class WaveViT(nn.Module, ResizingInterface):
 
             x = self.forward_tokens(x, H, W)
             x_cls = self.head(x[:, 0])
-            x_aux = self.aux_head(
-                x[:, 1:]
-            )  # generate classes in all feature tokens, see token labeling
+            x_aux = self.aux_head(x[:, 1:])  # generate classes in all feature tokens, see token labeling
 
             if not self.training:
                 return x_cls + 0.5 * x_aux.max(1)[0]
@@ -696,21 +712,44 @@ class WaveViT(nn.Module, ResizingInterface):
 
 @register_model
 def wavevit_s(pretrained=False, **kwargs):
-    model = WaveViT(stem_hidden_dim=32, embed_dims=[64, 128, 320, 448], num_heads=[2, 4, 10, 14],
-                    mlp_ratios=[8, 8, 4, 4], norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3],
-                    sr_ratios=[4, 2, 1, 1], **kwargs)
+    model = WaveViT(
+        stem_hidden_dim=32,
+        embed_dims=[64, 128, 320, 448],
+        num_heads=[2, 4, 10, 14],
+        mlp_ratios=[8, 8, 4, 4],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        depths=[3, 4, 6, 3],
+        sr_ratios=[4, 2, 1, 1],
+        **kwargs,
+    )
     return model
+
 
 @register_model
 def wavevit_b(pretrained=False, **kwargs):
-    model = WaveViT(stem_hidden_dim=64, embed_dims=[64, 128, 320, 512], num_heads=[2, 4, 10, 16],
-                    mlp_ratios=[8, 8, 4, 4], norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 12, 3],
-                    sr_ratios=[4, 2, 1, 1], **kwargs)
+    model = WaveViT(
+        stem_hidden_dim=64,
+        embed_dims=[64, 128, 320, 512],
+        num_heads=[2, 4, 10, 16],
+        mlp_ratios=[8, 8, 4, 4],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        depths=[3, 4, 12, 3],
+        sr_ratios=[4, 2, 1, 1],
+        **kwargs,
+    )
     return model
+
 
 @register_model
 def wavevit_l(pretrained=False, **kwargs):
-    model = WaveViT(stem_hidden_dim=64, embed_dims=[96, 192, 384, 512], num_heads=[3, 6, 12, 16],
-                    mlp_ratios=[8, 8, 4, 4], norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 6, 18, 3],
-                    sr_ratios=[4, 2, 1, 1], **kwargs)
+    model = WaveViT(
+        stem_hidden_dim=64,
+        embed_dims=[96, 192, 384, 512],
+        num_heads=[3, 6, 12, 16],
+        mlp_ratios=[8, 8, 4, 4],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        depths=[3, 6, 18, 3],
+        sr_ratios=[4, 2, 1, 1],
+        **kwargs,
+    )
     return model

@@ -27,20 +27,31 @@ class LinearAttention(nn.Module):
         eps: float, a small number to ensure the numerical stability of the
              denominator (default: 1e-6)
     """
-    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.,
-                 feature_map=lambda x: torch.nn.functional.elu(x) + 1, eps=1e-6):
+
+    def __init__(
+        self,
+        dim,
+        num_heads=8,
+        qkv_bias=False,
+        attn_drop=0.0,
+        proj_drop=0.0,
+        feature_map=lambda x: torch.nn.functional.elu(x) + 1,
+        eps=1e-6,
+    ):
         super(LinearAttention, self).__init__()
         self.feature_map = feature_map
         self.eps = eps
         self.num_heads = num_heads
-        self.qkv = nn.Linear(dim, dim*3, bias=qkv_bias)
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x):
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)  # 3 x B x H x N x d_head
+        qkv = (
+            self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        )  # 3 x B x H x N x d_head
         q, k, v = qkv.unbind(0)  # each B x H x N x d_head
 
         # Apply the feature map
@@ -52,10 +63,12 @@ class LinearAttention(nn.Module):
         kv = self.attn_drop(kv)
 
         # Compute the normalizer
-        z = 1/(torch.einsum("BHNd,BHd->BHN", q, k.sum(dim=-2))+self.eps)  # B x H x N
+        z = 1 / (torch.einsum("BHNd,BHd->BHN", q, k.sum(dim=-2)) + self.eps)  # B x H x N
 
         # Compute final values
-        y = torch.einsum("BHNd,BHmd,BHN->BHNm", q, kv, z)  # B x H x N x d  # TODO: test with 'transposed' kv (BHmd -> BHdm)
+        y = torch.einsum(
+            "BHNd,BHmd,BHN->BHNm", q, kv, z
+        )  # B x H x N x d  # TODO: test with 'transposed' kv (BHmd -> BHdm)
         y = y.transpose(1, 2).reshape(B, N, C)  # B x N x C
         y = self.proj(y)
         y = self.proj_drop(y)
@@ -64,9 +77,15 @@ class LinearAttention(nn.Module):
 
 
 class LinearAttentionBlock(Block):
-    def __init__(self, dim, num_heads, qkv_bias=False, attn_drop=0., proj_drop=0., **kwargs):
-        super().__init__(dim, num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=proj_drop, **kwargs)
-        self.attn = LinearAttention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+    def __init__(self, dim, num_heads, qkv_bias=False, attn_drop=0.0, proj_drop=0.0, drop=None, **kwargs):
+        if drop is not None:
+            super().__init__(dim, num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, drop=drop, **kwargs)
+            proj_drop = drop
+        else:
+            super().__init__(dim, num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=proj_drop, **kwargs)
+        self.attn = LinearAttention(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=proj_drop
+        )
 
 
 class LinearViT(TimmViT):
@@ -76,36 +95,51 @@ class LinearViT(TimmViT):
 
 @register_model
 def linear_vit_tiny_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["Ti"]
-    model = LinearViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      **sizes, **kwargs)
+    model = LinearViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     return model
+
 
 @register_model
 def linear_vit_small_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["S"]
-    model = LinearViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      **sizes, **kwargs)
+    model = LinearViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     return model
+
 
 @register_model
 def linear_vit_base_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["B"]
-    model = LinearViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      **sizes, **kwargs)
+    model = LinearViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     return model
+
 
 @register_model
 def linear_vit_large_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["L"]
-    model = LinearViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      **sizes, **kwargs)
+    model = LinearViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     return model

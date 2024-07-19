@@ -3,6 +3,7 @@
 
 import math
 from functools import partial
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
@@ -248,9 +249,7 @@ class ToMeBlock(Block):
                 self._tome_info["distill_token"],
             )
             if self._tome_info["trace_source"]:
-                self._tome_info["source"] = merge_source(
-                    merge, x, self._tome_info["source"]
-                )
+                self._tome_info["source"] = merge_source(merge, x, self._tome_info["source"])
             x, self._tome_info["size"] = merge_wavg(merge, x, self._tome_info["size"])
 
         x = x + self._drop_path2(self.ls2(self.mlp(self.norm2(x))))
@@ -280,11 +279,7 @@ class ToMeAttention(Attention):
         """
         # Note: this is copied from timm.models.vision_transformer.Attention with modifications.
         B, N, C = x.shape
-        qkv = (
-            self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
-            .permute(2, 0, 3, 1, 4)
-        )
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = (
             qkv[0],
             qkv[1],
@@ -373,89 +368,119 @@ def apply_patch(model: VisionTransformer, trace_source: bool = False, prop_attn:
 
 @register_model
 def tome_vit_tiny_r8_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["Ti"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 8
     return model
+
 
 @register_model
 def tome_vit_tiny_r13_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["Ti"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 13
     return model
+
 
 @register_model
 def tome_vit_small_r8_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["S"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 8
     return model
+
 
 @register_model
 def tome_vit_small_r13_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["S"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 13
     return model
+
 
 @register_model
 def tome_vit_base_r8_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["B"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 8
     return model
+
 
 @register_model
 def tome_vit_base_r13_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["B"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 13
     return model
 
+
 @register_model
 def tome_vit_large_r8_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["L"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 8
     return model
 
+
 @register_model
 def tome_vit_large_r13_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["L"]
-    model = TimmViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                    **sizes, **kwargs)
+    model = TimmViT(
+        img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes, **kwargs
+    )
     apply_patch(model)
     model.r = 13
     return model
-

@@ -41,7 +41,7 @@ class SwitchMlp(nn.Module):
         # Routing layer and softmax
         self.switch = nn.Linear(dim, n_experts)
         self.softmax = nn.Softmax(dim=-1)
-        self.internal_loss = 0.
+        self.internal_loss = 0.0
         self.loss_steps = 0
 
     def update_loss(self, route_counts, route_probs):
@@ -53,7 +53,7 @@ class SwitchMlp(nn.Module):
     def get_internal_loss(self, reset=True):
         loss = self.internal_loss / self.loss_steps
         if reset:
-            self.internal_loss = 0.
+            self.internal_loss = 0.0
             self.loss_steps = 0
         return loss
 
@@ -71,7 +71,7 @@ class SwitchMlp(nn.Module):
         # $$p_i(x) = \frac{e^{h(x)_i}}{\sum^N_j e^{h(x)_j}}$$
         # where $N$ is the number of experts `n_experts` and
         # $h(\cdot)$ is the linear transformation of token embeddings.
-        with torch.autocast(device_type='cuda', enabled=False):
+        with torch.autocast(device_type="cuda", enabled=False):
             # do routing in full precision
             route_prob = self.softmax(self.switch(x.float()))
 
@@ -150,12 +150,24 @@ class SwitchMlp(nn.Module):
 
 
 class SwitchBlock(Block):
-    def __init__(self, dim, num_heads, mlp_ratio=4., act_layer=nn.GELU, proj_drop=0., n_experts=8, capacity_factor=1.1,
-                 **kwargs):
+    def __init__(
+        self,
+        dim,
+        num_heads,
+        mlp_ratio=4.0,
+        act_layer=nn.GELU,
+        proj_drop=0.0,
+        n_experts=8,
+        capacity_factor=1.1,
+        **kwargs
+    ):
         super().__init__(dim, num_heads, mlp_ratio=mlp_ratio, act_layer=act_layer, proj_drop=proj_drop, **kwargs)
-        self.mlp = SwitchMlp(n_experts, dim, capacity_factor=capacity_factor,
-                             expert_fn=partial(Mlp, hidden_features=int(dim * mlp_ratio), act_layer=act_layer,
-                                               drop=proj_drop))
+        self.mlp = SwitchMlp(
+            n_experts,
+            dim,
+            capacity_factor=capacity_factor,
+            expert_fn=partial(Mlp, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=proj_drop),
+        )
 
     def get_internal_loss(self, reset=True):
         return self.mlp.get_internal_loss(reset)
@@ -163,11 +175,14 @@ class SwitchBlock(Block):
 
 class SwitchViT(TimmViT):
     def __init__(self, img_size=224, n_experts=8, capacity_factor=1.1, **kwargs):
-        super().__init__(img_size=img_size, block_fn=partial(SwitchBlock, n_experts=n_experts,
-                                                             capacity_factor=capacity_factor), **kwargs)
+        super().__init__(
+            img_size=img_size,
+            block_fn=partial(SwitchBlock, n_experts=n_experts, capacity_factor=capacity_factor),
+            **kwargs
+        )
 
     def get_internal_loss(self):
-        loss = 0.
+        loss = 0.0
         for block in self.blocks:
             loss += block.get_internal_loss(True)
         return loss
@@ -175,36 +190,75 @@ class SwitchViT(TimmViT):
 
 @register_model
 def switch_8_vit_tiny_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["Ti"]
-    model = SwitchViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      n_epoerts=8, **sizes, **kwargs)
+    model = SwitchViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        n_epoerts=8,
+        **sizes,
+        **kwargs
+    )
     return model
+
 
 @register_model
 def switch_8_vit_small_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["S"]
-    model = SwitchViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      n_epoerts=8, **sizes, **kwargs)
+    model = SwitchViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        n_epoerts=8,
+        **sizes,
+        **kwargs
+    )
     return model
+
 
 @register_model
 def switch_8_vit_base_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["B"]
-    model = SwitchViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      n_epoerts=8, **sizes, **kwargs)
+    model = SwitchViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        n_epoerts=8,
+        **sizes,
+        **kwargs
+    )
     return model
+
 
 @register_model
 def switch_8_vit_large_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["L"]
-    model = SwitchViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                      n_epoerts=8, **sizes, **kwargs)
+    model = SwitchViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        n_epoerts=8,
+        **sizes,
+        **kwargs
+    )
     return model

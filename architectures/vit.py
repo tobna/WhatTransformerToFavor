@@ -4,9 +4,10 @@ from resizing_interface import ResizingInterface
 
 class _MatrixSaveAttn(Attention):
     attn_mat = None
+
     @classmethod
     def cast(cls, attn: Attention):
-        assert isinstance(attn, Attention), f"Can only save attention from Timms attention class"
+        assert isinstance(attn, Attention), "Can only save attention from Timms attention class"
         attn.__class__ = cls
         assert isinstance(attn, _MatrixSaveAttn)
         return attn
@@ -31,11 +32,35 @@ class TimmViT(VisionTransformer, ResizingInterface):
     """
     Wrapper for *VisionTransformer* from *timm* library (https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py).
     """
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, global_pool='token', embed_dim=768,
-                 depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True, init_values=None, class_token=True,
-                 no_embed_class=True, pre_norm=False, fc_norm=None, drop_rate=0., attn_drop_rate=0., drop_path_rate=0.,
-                 weight_init='', embed_layer=PatchEmbed, norm_layer=None, act_layer=None, block_fn=Block,
-                 save_attention_maps=False, **kwargs):
+
+    def __init__(
+        self,
+        img_size=224,
+        patch_size=16,
+        in_chans=3,
+        num_classes=1000,
+        global_pool="token",
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        mlp_ratio=4.0,
+        qkv_bias=True,
+        init_values=None,
+        class_token=True,
+        no_embed_class=True,
+        pre_norm=False,
+        fc_norm=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.0,
+        weight_init="",
+        embed_layer=PatchEmbed,
+        norm_layer=None,
+        act_layer=None,
+        block_fn=Block,
+        save_attention_maps=False,
+        **kwargs
+    ):
         """
 
         Parameters
@@ -88,14 +113,32 @@ class TimmViT(VisionTransformer, ResizingInterface):
             which block structure to use; for parallel attention layers, ...
         """
 
-        super(TimmViT, self).__init__(img_size=img_size, patch_size=patch_size, in_chans=in_chans,
-                                      num_classes=num_classes, global_pool=global_pool, embed_dim=embed_dim, depth=depth,
-                                      num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias,
-                                      init_values=init_values, class_token=class_token, no_embed_class=no_embed_class,
-                                      pre_norm=pre_norm, fc_norm=fc_norm, drop_rate=drop_rate, proj_drop_rate=drop_rate,
-                                      attn_drop_rate=attn_drop_rate, drop_path_rate=drop_path_rate,
-                                      weight_init=weight_init, embed_layer=embed_layer, norm_layer=norm_layer,
-                                      act_layer=act_layer, block_fn=block_fn)
+        super(TimmViT, self).__init__(
+            img_size=img_size,
+            patch_size=patch_size,
+            in_chans=in_chans,
+            num_classes=num_classes,
+            global_pool=global_pool,
+            embed_dim=embed_dim,
+            depth=depth,
+            num_heads=num_heads,
+            mlp_ratio=mlp_ratio,
+            qkv_bias=qkv_bias,
+            init_values=init_values,
+            class_token=class_token,
+            no_embed_class=no_embed_class,
+            pre_norm=pre_norm,
+            fc_norm=fc_norm,
+            drop_rate=drop_rate,
+            proj_drop_rate=drop_rate,
+            attn_drop_rate=attn_drop_rate,
+            drop_path_rate=drop_path_rate,
+            weight_init=weight_init,
+            embed_layer=embed_layer,
+            norm_layer=norm_layer,
+            act_layer=act_layer,
+            block_fn=block_fn,
+        )
         self.embed_layer = embed_layer
         self.img_size = img_size
         self.patch_size = patch_size
@@ -115,4 +158,4 @@ class TimmViT(VisionTransformer, ResizingInterface):
 
     def attention_maps(self):
         assert self.save_attention_maps, "Have to save attention maps first"
-        return [getattr(block.attn, 'attn_mat') for block in self.blocks]
+        return [getattr(block.attn, "attn_mat") for block in self.blocks]

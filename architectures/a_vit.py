@@ -33,12 +33,13 @@ from utils import DotDict
 
 
 class Masked_Attention(nn.Module):
-    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0., mask=None,
-                 masked_softmax_bias=-1000.):
+    def __init__(
+        self, dim, num_heads=8, qkv_bias=False, attn_drop=0.0, proj_drop=0.0, mask=None, masked_softmax_bias=-1000.0
+    ):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
@@ -75,14 +76,27 @@ class Masked_Attention(nn.Module):
 
 class Block_ACT(nn.Module):
 
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, args=None, index=-1, num_patches=197):
+    def __init__(
+        self,
+        dim,
+        num_heads,
+        mlp_ratio=4.0,
+        qkv_bias=False,
+        drop=0.0,
+        attn_drop=0.0,
+        drop_path=0.0,
+        act_layer=nn.GELU,
+        norm_layer=nn.LayerNorm,
+        args=None,
+        index=-1,
+        num_patches=197,
+    ):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Masked_Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
 
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
@@ -97,7 +111,7 @@ class Block_ACT(nn.Module):
             # Apply sigmoid on the mean of all tokens to determine whether to continue
             self.sig = torch.sigmoid
         else:
-            print('Not supported yet.')
+            print("Not supported yet.")
             exit()
 
     def forward(self, x):
@@ -108,9 +122,6 @@ class Block_ACT(nn.Module):
         return x
 
     def forward_act(self, x, mask=None):
-
-        debug = False
-        analyze_delta = True
         bs, token, dim = x.shape
 
         if mask is None:
@@ -118,9 +129,11 @@ class Block_ACT(nn.Module):
             x = x + self.drop_path(self.mlp(self.norm2(x)))
         else:
             x = x + self.drop_path(
-                self.attn(self.norm1(x * (1 - mask).view(bs, token, 1)) * (1 - mask).view(bs, token, 1), mask=mask))
+                self.attn(self.norm1(x * (1 - mask).view(bs, token, 1)) * (1 - mask).view(bs, token, 1), mask=mask)
+            )
             x = x + self.drop_path(
-                self.mlp(self.norm2(x * (1 - mask).view(bs, token, 1)) * (1 - mask).view(bs, token, 1)))
+                self.mlp(self.norm2(x * (1 - mask).view(bs, token, 1)) * (1 - mask).view(bs, token, 1))
+            )
 
         if self.act_mode == 4:
             gate_scale, gate_center = self.args.gate_scale, self.args.gate_center
@@ -129,79 +142,81 @@ class Block_ACT(nn.Module):
             # now discarding position 1
             halting_score = [-1, halting_score_token]
         else:
-            print('Not supported yet.')
+            print("Not supported yet.")
             exit()
 
         return x, halting_score
 
 
-def get_distribution_target(mode='gaussian', length=12, max=1, standardized=True, target_depth=8, buffer=0.02):
+def get_distribution_target(mode="gaussian", length=12, max=1, standardized=True, target_depth=8, buffer=0.02):
     """
     This generates the target distributional prior
     """
     # this gets the distributional target to regularize the ACT halting scores towards
-    if mode == 'gaussian':
+    if mode == "gaussian":
         from scipy.stats import norm
+
         # now get a serios of length
         data = np.arange(length)
         data = norm.pdf(data, loc=target_depth, scale=1)
 
         if standardized:
-            print('\nReshaping distribution to be top-1 sum 1 - error at {}'.format(buffer))
-            scaling_factor = (1. - buffer) / sum(data[:target_depth])
+            print("\nReshaping distribution to be top-1 sum 1 - error at {}".format(buffer))
+            scaling_factor = (1.0 - buffer) / sum(data[:target_depth])
             data *= scaling_factor
 
         return data
 
-    elif mode == 'lognorm':
+    elif mode == "lognorm":
         from scipy.stats import lognorm
 
         data = np.arange(length)
         data = lognorm.pdf(data, s=0.99)
 
         if standardized:
-            print('\nReshaping distribution to be top-1 sum 1 - error at {}'.format(buffer))
-            scaling_factor = (1. - buffer) / sum(data[:target_depth])
+            print("\nReshaping distribution to be top-1 sum 1 - error at {}".format(buffer))
+            scaling_factor = (1.0 - buffer) / sum(data[:target_depth])
             data *= scaling_factor
 
-        print('\nForming distribution at:', data)
+        print("\nForming distribution at:", data)
         return data
 
-    elif mode == 'skewnorm':
+    elif mode == "skewnorm":
         from scipy.stats import skewnorm
+
         # now get a serios of length
         data = np.arange(1, length)
         data = skewnorm.pdf(data, a=-4, loc=target_depth)
         return data
 
     else:
-        print('Get distributional prior not implemented!')
+        print("Get distributional prior not implemented!")
         raise NotImplementedError
 
 
-def _init_vit_weights(module: nn.Module, name: str = '', head_bias: float = 0., jax_impl: bool = False):
-    """ ViT weight initialization
+def _init_vit_weights(module: nn.Module, name: str = "", head_bias: float = 0.0, jax_impl: bool = False):
+    """ViT weight initialization
     * When called without n, head_bias, jax_impl args it will behave exactly the same
       as my original init for compatibility with prev hparam / downstream use cases (ie DeiT).
     * When called w/ valid n (module name) and jax_impl=True, will (hopefully) match JAX impl
     """
     if isinstance(module, nn.Linear):
-        if name.startswith('head'):
+        if name.startswith("head"):
             nn.init.zeros_(module.weight)
             nn.init.constant_(module.bias, head_bias)
-        elif name.startswith('pre_logits'):
+        elif name.startswith("pre_logits"):
             lecun_normal_(module.weight)
             nn.init.zeros_(module.bias)
         else:
             if jax_impl:
                 nn.init.xavier_uniform_(module.weight)
                 if module.bias is not None:
-                    if 'mlp' in name:
+                    if "mlp" in name:
                         nn.init.normal_(module.bias, std=1e-6)
                     else:
                         nn.init.zeros_(module.bias)
             else:
-                trunc_normal_(module.weight, std=.02)
+                trunc_normal_(module.weight, std=0.02)
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
     elif jax_impl and isinstance(module, nn.Conv2d):
@@ -216,7 +231,7 @@ def _init_vit_weights(module: nn.Module, name: str = '', head_bias: float = 0., 
 
 # Adaptive Vision Transformer
 class AViT(nn.Module, ResizingInterface):
-    """ Vision Transformer with Adaptive Token Capability
+    """Vision Transformer with Adaptive Token Capability
     Starting at:
         A PyTorch impl of : `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale`
             - https://arxiv.org/abs/2010.11929
@@ -226,10 +241,29 @@ class AViT(nn.Module, ResizingInterface):
         Accomodate adaptive token inference
     """
 
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
-                 num_heads=12, mlp_ratio=4., qkv_bias=True, representation_size=None, distilled=False,
-                 drop_rate=0., attn_drop_rate=0., drop_path_rate=0., embed_layer=PatchEmbed, norm_layer=None,
-                 act_layer=None, weight_init='', args=None, **kwargs):
+    def __init__(
+        self,
+        img_size=224,
+        patch_size=16,
+        in_chans=3,
+        num_classes=1000,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        mlp_ratio=4.0,
+        qkv_bias=True,
+        representation_size=None,
+        distilled=False,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.0,
+        embed_layer=PatchEmbed,
+        norm_layer=None,
+        act_layer=None,
+        weight_init="",
+        args=None,
+        **kwargs,
+    ):
         """
         Args:
             img_size (int, tuple): input image size
@@ -260,8 +294,7 @@ class AViT(nn.Module, ResizingInterface):
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
         act_layer = act_layer or nn.GELU
 
-        self.patch_embed = embed_layer(
-            img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+        self.patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
         self.embed_layer = embed_layer
         self.patch_size = patch_size
@@ -276,22 +309,34 @@ class AViT(nn.Module, ResizingInterface):
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
 
-        self.blocks = nn.Sequential(*[
-            Block_ACT(
-                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, drop=drop_rate,
-                attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer, act_layer=act_layer, args=args,
-                index=i, num_patches=self.patch_embed.num_patches + 1)
-            for i in range(depth)])
+        self.blocks = nn.Sequential(
+            *[
+                Block_ACT(
+                    dim=embed_dim,
+                    num_heads=num_heads,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias,
+                    drop=drop_rate,
+                    attn_drop=attn_drop_rate,
+                    drop_path=dpr[i],
+                    norm_layer=norm_layer,
+                    act_layer=act_layer,
+                    args=args,
+                    index=i,
+                    num_patches=self.patch_embed.num_patches + 1,
+                )
+                for i in range(depth)
+            ]
+        )
 
         self.norm = norm_layer(embed_dim)
 
         # Representation layer
         if representation_size and not distilled:
             self.num_features = representation_size
-            self.pre_logits = nn.Sequential(OrderedDict([
-                ('fc', nn.Linear(embed_dim, representation_size)),
-                ('act', nn.Tanh())
-            ]))
+            self.pre_logits = nn.Sequential(
+                OrderedDict([("fc", nn.Linear(embed_dim, representation_size)), ("act", nn.Tanh())])
+            )
         else:
             self.pre_logits = nn.Identity()
 
@@ -303,19 +348,19 @@ class AViT(nn.Module, ResizingInterface):
 
         self.init_weights(weight_init)
 
-        print('\nNow this is an ACT DeiT.\n')
+        print("\nNow this is an ACT DeiT.\n")
         self.eps = 0.01
-        print(f'Setting eps as {self.eps}.')
+        print(f"Setting eps as {self.eps}.")
 
-        print('Now re-initializing the halting network bias')
+        print("Now re-initializing the halting network bias")
         for block in self.blocks:
             if args.act_mode == 1:
                 # torch.nn.init.constant_(block.act_mlp.fc1.bias.data, -3)
-                torch.nn.init.constant_(block.act_mlp.fc2.bias.data, -1. * args.gate_center)
+                torch.nn.init.constant_(block.act_mlp.fc2.bias.data, -1.0 * args.gate_center)
 
         self.args = args
 
-        print('Now setting up the rho.')
+        print("Now setting up the rho.")
         self.rho = None  # Ponder cost
         self.counter = None  # Keeps track of how many layers are used for each example (for logging)
         self.batch_cnt = 0  # amount of batches seen, mainly for tensorboard
@@ -329,12 +374,14 @@ class AViT(nn.Module, ResizingInterface):
         self.halting_score_layer = None
         self.total_token_cnt = num_patches + self.num_prefix_tokens
 
-        if args.distr_prior_alpha > 0.:
+        if args.distr_prior_alpha > 0.0:
             self.distr_target = torch.Tensor(get_distribution_target(standardized=True)).cuda()
-            self.kl_loss = nn.KLDivLoss(reduction='batchmean').cuda()
+            self.kl_loss = nn.KLDivLoss(reduction="batchmean").cuda()
 
     def get_internal_loss(self):
-        ponder_loss_token = self.rho_token.view(-1).mean(0) * self.args.ponder_token_scale if self.rho_token is not None else 0.
+        ponder_loss_token = (
+            self.rho_token.view(-1).mean(0) * self.args.ponder_token_scale if self.rho_token is not None else 0.0
+        )
         halting_score_dist = torch.stack(self.halting_score_layer)
         halting_score_dist = halting_score_dist / halting_score_dist.sum()
         halting_score_dist = halting_score_dist.clamp(min=0.01, max=0.99)
@@ -348,14 +395,14 @@ class AViT(nn.Module, ResizingInterface):
         self.c_token = self.R_token = self.mask_token = self.rho_token = self.counter_token = None
         self.total_token_cnt = self.patch_embed.num_patches + self.num_prefix_tokens
 
-    def init_weights(self, mode=''):
-        assert mode in ('jax', 'jax_nlhb', 'nlhb', '')
-        head_bias = -math.log(self.num_classes) if 'nlhb' in mode else 0.
-        trunc_normal_(self.pos_embed, std=.02)
+    def init_weights(self, mode=""):
+        assert mode in ("jax", "jax_nlhb", "nlhb", "")
+        head_bias = -math.log(self.num_classes) if "nlhb" in mode else 0.0
+        trunc_normal_(self.pos_embed, std=0.02)
         if self.dist_token is not None:
-            trunc_normal_(self.dist_token, std=.02)
+            trunc_normal_(self.dist_token, std=0.02)
         else:
-            trunc_normal_(self.cls_token, std=.02)
+            trunc_normal_(self.cls_token, std=0.02)
             self.apply(_init_vit_weights)
 
     def _init_weights(self, m):
@@ -364,7 +411,7 @@ class AViT(nn.Module, ResizingInterface):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        return {'pos_embed', 'cls_token', 'dist_token'}
+        return {"pos_embed", "cls_token", "dist_token"}
 
     def get_classifier(self):
         if self.dist_token is None:
@@ -372,7 +419,7 @@ class AViT(nn.Module, ResizingInterface):
         else:
             return self.head, self.head_dist
 
-    def reset_classifier(self, num_classes, global_pool=''):
+    def reset_classifier(self, num_classes, global_pool=""):
         self.num_classes = num_classes
         self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
         if self.num_prefix_tokens == 2:
@@ -401,14 +448,18 @@ class AViT(nn.Module, ResizingInterface):
         c_token = self.c_token.clone()
         R_token = self.R_token.clone()
         mask_token = self.mask_token.clone()
-        self.rho_token = torch.zeros_like(self.rho_token, requires_grad=not self.training)  # self.rho_token.detach() * 0.
-        self.counter_token = torch.zeros_like(self.counter_token, requires_grad=not self.training) + 1.  # self.counter_token.detach() * 0 + 1.
+        self.rho_token = torch.zeros_like(
+            self.rho_token, requires_grad=not self.training
+        )  # self.rho_token.detach() * 0.
+        self.counter_token = (
+            torch.zeros_like(self.counter_token, requires_grad=not self.training) + 1.0
+        )  # self.counter_token.detach() * 0 + 1.
         # Will contain the output of this residual layer (weighted sum of outputs of the residual blocks)
         output = None
         # Use out to backbone
         out = x
 
-        if self.args.distr_prior_alpha > 0.:
+        if self.args.distr_prior_alpha > 0.0:
             self.halting_score_layer = []
 
         for i, l in enumerate(self.blocks):
@@ -418,10 +469,11 @@ class AViT(nn.Module, ResizingInterface):
 
             # evaluate layer and get halting probability for each sample
             # block_output, h_lst = l.forward_act(out)    # h is a vector of length bs, block_output a 3D tensor
-            block_output, h_lst = l.forward_act(out,
-                                                1. - mask_token.float())  # h is a vector of length bs, block_output a 3D tensor
+            block_output, h_lst = l.forward_act(
+                out, 1.0 - mask_token.float()
+            )  # h is a vector of length bs, block_output a 3D tensor
 
-            if self.args.distr_prior_alpha > 0.:
+            if self.args.distr_prior_alpha > 0.0:
                 self.halting_score_layer.append(torch.mean(h_lst[1][1:]))
 
             out = block_output.clone()  # Deep copy needed for the next layer
@@ -443,9 +495,11 @@ class AViT(nn.Module, ResizingInterface):
             # token part
             reached_token = c_token > 1 - self.eps
             reached_token = reached_token.float() * mask_token.float()
-            delta1 = block_output * R_token.view(bs, self.total_token_cnt, 1) * reached_token.view(bs,
-                                                                                                   self.total_token_cnt,
-                                                                                                   1)
+            delta1 = (
+                block_output
+                * R_token.view(bs, self.total_token_cnt, 1)
+                * reached_token.view(bs, self.total_token_cnt, 1)
+            )
             self.rho_token = self.rho_token + R_token * reached_token
 
             # Case 2: threshold not reached
@@ -453,11 +507,15 @@ class AViT(nn.Module, ResizingInterface):
             not_reached_token = c_token < 1 - self.eps
             not_reached_token = not_reached_token.float()
             R_token = R_token - (not_reached_token.float() * h_token)
-            delta2 = block_output * h_token.view(bs, self.total_token_cnt, 1) * not_reached_token.view(bs,
-                                                                                                       self.total_token_cnt,
-                                                                                                       1)
+            delta2 = (
+                block_output
+                * h_token.view(bs, self.total_token_cnt, 1)
+                * not_reached_token.view(bs, self.total_token_cnt, 1)
+            )
 
-            self.counter_token = self.counter_token + not_reached_token  # These data points will need at least one more layer
+            self.counter_token = (
+                self.counter_token + not_reached_token
+            )  # These data points will need at least one more layer
 
             # Update the mask
             mask_token = c_token < 1 - self.eps
@@ -499,7 +557,7 @@ class AViT(nn.Module, ResizingInterface):
         if self.args.act_mode == 4:
             x = self.forward_features_act_token(x)
         else:
-            print('Not implemented yet, please specify for token act.')
+            print("Not implemented yet, please specify for token act.")
             exit()
 
         if self.head_dist is not None:
@@ -517,42 +575,83 @@ class AViT(nn.Module, ResizingInterface):
 
 @register_model
 def avit_tiny_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["Ti"]
-    model = AViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes,
-                 args=DotDict(dict(act_mode=4, distr_prior_alpha=.01, gate_scale=100., gate_center=3.,
-                                   ponder_token_scale=0.001)), **kwargs)
+    model = AViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **sizes,
+        args=DotDict(
+            dict(act_mode=4, distr_prior_alpha=0.01, gate_scale=100.0, gate_center=3.0, ponder_token_scale=0.001)
+        ),
+        **kwargs,
+    )
     return model
+
 
 @register_model
 def avit_small_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["S"]
-    model = AViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes,
-                 args=DotDict(dict(act_mode=4, distr_prior_alpha=.01, gate_scale=100., gate_center=3.,
-                                   ponder_token_scale=0.001)), **kwargs)
+    model = AViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **sizes,
+        args=DotDict(
+            dict(act_mode=4, distr_prior_alpha=0.01, gate_scale=100.0, gate_center=3.0, ponder_token_scale=0.001)
+        ),
+        **kwargs,
+    )
     return model
+
 
 @register_model
 def avit_base_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["B"]
-    model = AViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes,
-                 args=DotDict(dict(act_mode=4, distr_prior_alpha=.01, gate_scale=100., gate_center=3.,
-                                   ponder_token_scale=0.001)), **kwargs)
+    model = AViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **sizes,
+        args=DotDict(
+            dict(act_mode=4, distr_prior_alpha=0.01, gate_scale=100.0, gate_center=3.0, ponder_token_scale=0.001)
+        ),
+        **kwargs,
+    )
     return model
+
 
 @register_model
 def avit_large_patch16(pretrained=False, img_size=224, **kwargs):
-    if 'layer_scale_init_values' in kwargs:
-        kwargs['init_values'] = kwargs['layer_scale_init_values'] if 'layer_scale' in kwargs and kwargs['layer_scale'] else None
+    if "layer_scale_init_values" in kwargs:
+        kwargs["init_values"] = (
+            kwargs["layer_scale_init_values"] if "layer_scale" in kwargs and kwargs["layer_scale"] else None
+        )
     sizes = vit_sizes["L"]
-    model = AViT(img_size=img_size, patch_size=16, in_chans=3, norm_layer=partial(nn.LayerNorm, eps=1e-6), **sizes,
-                 args=DotDict(dict(act_mode=4, distr_prior_alpha=.01, gate_scale=100., gate_center=3.,
-                                   ponder_token_scale=0.001)), **kwargs)
+    model = AViT(
+        img_size=img_size,
+        patch_size=16,
+        in_chans=3,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **sizes,
+        args=DotDict(
+            dict(act_mode=4, distr_prior_alpha=0.01, gate_scale=100.0, gate_center=3.0, ponder_token_scale=0.001)
+        ),
+        **kwargs,
+    )
     return model
-
-
