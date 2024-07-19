@@ -13,3 +13,4 @@ PyWavelets
 sinkhorn_transformer
 routing_transformer
 halonet_pytorch
+reformer_pytorch
