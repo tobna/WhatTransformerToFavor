@@ -16,6 +16,7 @@ Moreover, our benchmark shows that using a larger model in general is more effic
 Thanks to our holistic evaluation, we provide a centralized resource for practitioners and researchers, facilitating informed decisions when selecting or developing efficient transformers.
 
 ## Updates
+- [22.07.2024] We have released a [new version of the paper on ArXiv](https://arxiv.org/pdf/2308.09372v3) featuring 12 new models and more analysis into the scaling behaviors :newspaper_roll:
 - [19.07.2024] We have added [AFNO](architectures/afno.py), [EfficientMod](architectures/efficient_mod.py), [EfficientViT](architectures/efficient_vit.py), [FastViT](architectures/fastvit.py), [HiViT](architectures/hivit.py), [Hydra Attention](architectures/hydra_attention.py), [Informer](architectures/informer.py), [Next-ViT](architectures/next_vit.py), [Reformer](architectures/reformer.py), [ResT](architectures/rest.py), [SLAB](architectures/slab.py), and [SwiftFormer](architectures/swiftformer.py) to the benchmark :gear:
 - [19.07.2024] We have uniformly reformatted most files :black_flag:
 
