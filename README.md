@@ -168,13 +168,12 @@ We release this code under the [MIT license](./LICENSE).
 ## Citation
 If you use this codebase in your project, please cite:
 ```BibTex
-@misc{Nauen2023WTFBenchmark,
-      title={Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers}, 
-      author={Tobias Christian Nauen and Sebastian Palacio and Andreas Dengel},
-      year={2023},
-      eprint={2308.09372},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      note={Accepted at WACV 2025}
+@inproceedings{Nauen2024WTFBenchmark,
+  author    = {Nauen, Tobias Christian and Palacio, Sebastian and Raue, Federico and Dengel, Andreas},
+  title     = {Which Transformer to Favor: A Comparative Analysis of Efficiency in Vision Transformers},
+  booktitle = {Proceedings of the Winter Conference on Applications of Computer Vision (WACV)},
+  month     = {February},
+  year      = {2025},
+  pages     = {6955-6966}
 }
 ```
