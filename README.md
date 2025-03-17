@@ -1,3 +1,11 @@
+[![Project Page](https://img.shields.io/badge/Project%20Page-darkred)](https://tobias.nauen-it.de/publication/wtf-benchmark/)
+[![WACV PDF](https://img.shields.io/badge/WACV%202025-PDF-green)](https://openaccess.thecvf.com/content/WACV2025/papers/Nauen_Which_Transformer_to_Favor_A_Comparative_Analysis_of_Efficiency_in_WACV_2025_paper.pdf)
+[![WACV Abstract](https://img.shields.io/badge/WACV%202025-Abstract-orange)](https://openaccess.thecvf.com/content/WACV2025/html/Nauen_Which_Transformer_to_Favor_A_Comparative_Analysis_of_Efficiency_in_WACV_2025_paper.html)
+[![arXiv](https://img.shields.io/badge/arXiv-2308.09372-b31b1b?logo=arxiv)](https://arxiv.org/abs/2308.09372)
+![Architectures: 40](https://img.shields.io/badge/Architectures-40-purple)
+![Models: 94](https://img.shields.io/badge/Models-94-violet)
+
+
 # Which Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
 ![First plot from the paper: Pareto front of throughput vs. accuracy](./figures/throughput_vs_acc_size_imsize.png)
 
