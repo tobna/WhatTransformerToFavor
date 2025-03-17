@@ -25,7 +25,7 @@ Moreover, our benchmark shows that using a larger model in general is more effic
 Thanks to our holistic evaluation, we provide a centralized resource for practitioners and researchers, facilitating informed decisions when selecting or developing efficient transformers.
 
 ## Updates
-- [28.02.2025] The *WTF Benchmark* was published as part of the [WACV 2025 conference proceedings] :book:(https://openaccess.thecvf.com/content/WACV2025/html/Nauen_Which_Transformer_to_Favor_A_Comparative_Analysis_of_Efficiency_in_WACV_2025_paper.html)
+- [28.02.2025] The *WTF Benchmark* was published as part of the [WACV 2025 conference proceedings](https://openaccess.thecvf.com/content/WACV2025/html/Nauen_Which_Transformer_to_Favor_A_Comparative_Analysis_of_Efficiency_in_WACV_2025_paper.html) :book:
 - [28.09.2024] We have created a [blogpost on the WTF Benchmark](https://tobias.nauen-it.de/publication/wtf-benchmark/) with interactive plots :computer_mouse: :computer:
 - [10.09.2024] We are happy to announce that the benchmark has been accepted for publication at **WACV 2025** :tada:
 - [22.07.2024] We have released a [new version of the paper on ArXiv](https://arxiv.org/pdf/2308.09372v3) featuring 12 new models and more analysis into the scaling behaviors :newspaper_roll:
