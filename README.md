@@ -4,6 +4,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2308.09372-b31b1b?logo=arxiv)](https://arxiv.org/abs/2308.09372)
 ![Architectures: 40](https://img.shields.io/badge/Architectures-40-purple)
 ![Models: 94](https://img.shields.io/badge/Models-94-violet)
+[![Static Badge](https://img.shields.io/badge/Citation-BibTeX-blue)](https://tobias.nauen-it.de/publication/wtf-benchmark/cite.bib)
 
 
 # Which Transformer to Favor: <br>A Comparative Analysis of Efficiency in Vision Transformers
